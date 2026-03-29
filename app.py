@@ -5,7 +5,8 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 from models import db, Glaze, Ingredient, Material, GlazeTest, Tile, FiringLog
 
-app = Flask(__name__, static_folder='static', static_url_path='/static')@app.route('/static/<path:filename>')
+app = Flask(__name__, static_folder='static', static_url_path='/static')
+@app.route('/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory(app.static_folder, filename)
 
