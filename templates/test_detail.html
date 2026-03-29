@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}{{ test.name }}{% endblock %}
+{% block topbar_title %}<a href="{{ url_for('tests') }}" class="breadcrumb">Tests</a> / {{ test.name }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('new_tile', test_id=test.id) }}" class="btn btn-primary">+ Log Tile</a>
+{% endblock %}
+
+{% block content %}
+<div class="detail-panel" style="margin-bottom:24px;">
+  <div class="detail-header">
+    <div>
+      <div class="detail-num">
+        <a href="{{ url_for('glaze_detail', glaze_id=test.glaze.id) }}">#{{ test.glaze.studio_number }} {{ test.glaze.name }}</a>
+      </div>
+      <div class="detail-name">{{ test.name }}</div>
+      <div class="card-meta">{{ test.test_type.replace('_',' ') }} · {{ test.base_batch_size }}g base</div>
+    </div>
+    <span class="status-badge {{ test.status }}">{{ test.status }}</span>
+  </div>
+  {% if test.description %}
+  <div style="padding:0 28px 20px;">
+    <div class="notes-box">{{ test.description }}</div>
+  </div>
+  {% endif %}
+</div>
+
+{% if test.tiles %}
+<div class="tiles-grid">
+{% for tile in test.tiles %}
+<div class="tile-card {% if tile.atmosphere %}fired{% endif %}">
+  <div class="tile-header">
+    <div class="tile-num">Tile {{ tile.tile_number }}</div>
+    <div class="tile-status">{% if tile.atmosphere %}Fired{% else %}Pending{% endif %}</div>
+  </div>
+
+  {% if tile.photo_path %}
+  <div class="tile-photo">
+    <img src="{{ url_for('static', filename=tile.photo_path) }}" alt="Tile {{ tile.tile_number }}">
+  </div>
+  {% else %}
+  <div class="tile-photo-placeholder">No photo</div>
+  {% endif %}
+
+  <div class="tile-body">
+    {% if tile.additions %}
+    <div class="tile-additions">{{ tile.additions }}</div>
+    {% endif %}
+
+    <div class="tile-meta-row">
+      {% if tile.thickness %}<span class="tile-meta-item">Thickness: {{ tile.thickness }}/10</span>{% endif %}
+      {% if tile.wood_ash_on_top %}<span class="tile-meta-item tile-ash">Ash on top</span>{% endif %}
+    </div>
+
+    {% if tile.atmosphere %}
+    <div class="tile-firing">
+      {% if tile.cone %}<span class="tile-firing-item">{{ tile.cone }}</span>{% endif %}
+      {% if tile.atmosphere %}<span class="tile-firing-item">{{ tile.atmosphere }}</span>{% endif %}
+      {% if tile.body_reduction %}<span class="tile-firing-item">Body: {{ tile.body_reduction }}</span>{% endif %}
+      {% if tile.glaze_reduction %}<span class="tile-firing-item">Glaze: {{ tile.glaze_reduction }}</span>{% endif %}
+      {% if tile.cooling %}<span class="tile-firing-item">Cool: {{ tile.cooling }}</span>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if tile.result_notes %}
+    <div class="tile-notes">{{ tile.result_notes }}</div>
+    {% endif %}
+
+    <a href="{{ url_for('edit_tile', tile_id=tile.id) }}" class="tile-edit-link">Edit</a>
+  </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty-state">No tiles logged yet. <a href="{{ url_for('new_tile', test_id=test.id) }}">Log the first tile.</a></div>
+{% endif %}
+{% endblock %}
