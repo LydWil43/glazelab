@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Log Tile{% endblock %}
+{% block topbar_title %}<a href="{{ url_for('test_detail', test_id=test.id) }}" class="breadcrumb">{{ test.name }}</a> / {% if tile %}Edit Tile {{ tile.tile_number }}{% else %}New Tile{% endif %}{% endblock %}
+
+{% block content %}
+<div class="form-panel">
+  <form method="post" enctype="multipart/form-data">
+
+    <div class="form-section">
+      <div class="form-section-title">Tile Identity</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tile Number *</label>
+          <input type="number" name="tile_number" value="{{ tile.tile_number if tile else next_tile }}" required>
+        </div>
+        <div class="form-group">
+          <label>Thickness (1–10)</label>
+          <input type="number" name="thickness" value="{{ tile.thickness if tile else '' }}" min="1" max="10">
+        </div>
+        <div class="form-group form-group-check">
+          <label class="check-label">
+            <input type="checkbox" name="wood_ash_on_top" {% if tile and tile.wood_ash_on_top %}checked{% endif %}>
+            Wood ash on top
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Additions / Description</label>
+        <input type="text" name="additions" value="{{ tile.additions if tile else '' }}" placeholder="e.g. +2g Zircopax (total: 6g), bucket: 107g">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Firing Notes</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Atmosphere</label>
+          <select name="atmosphere">
+            <option value="">Not yet fired</option>
+            <option value="Reduction" {% if tile and tile.atmosphere=='Reduction' %}selected{% endif %}>Reduction</option>
+            <option value="Oxidation" {% if tile and tile.atmosphere=='Oxidation' %}selected{% endif %}>Oxidation</option>
+            <option value="Neutral" {% if tile and tile.atmosphere=='Neutral' %}selected{% endif %}>Neutral</option>
+            <option value="Wood" {% if tile and tile.atmosphere=='Wood' %}selected{% endif %}>Wood</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cone</label>
+          <input type="text" name="cone" value="{{ tile.cone if tile else '' }}" placeholder="e.g. Cone 10">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Body Reduction</label>
+          <select name="body_reduction">
+            <option value="">—</option>
+            <option value="Light" {% if tile and tile.body_reduction=='Light' %}selected{% endif %}>Light</option>
+            <option value="Medium" {% if tile and tile.body_reduction=='Medium' %}selected{% endif %}>Medium</option>
+            <option value="Heavy" {% if tile and tile.body_reduction=='Heavy' %}selected{% endif %}>Heavy</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Glaze Reduction</label>
+          <select name="glaze_reduction">
+            <option value="">—</option>
+            <option value="Light" {% if tile and tile.glaze_reduction=='Light' %}selected{% endif %}>Light</option>
+            <option value="Medium" {% if tile and tile.glaze_reduction=='Medium' %}selected{% endif %}>Medium</option>
+            <option value="Heavy" {% if tile and tile.glaze_reduction=='Heavy' %}selected{% endif %}>Heavy</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cooling</label>
+          <select name="cooling">
+            <option value="">—</option>
+            <option value="Natural slow" {% if tile and tile.cooling=='Natural slow' %}selected{% endif %}>Natural slow</option>
+            <option value="Controlled slow" {% if tile and tile.cooling=='Controlled slow' %}selected{% endif %}>Controlled slow</option>
+            <option value="Crash" {% if tile and tile.cooling=='Crash' %}selected{% endif %}>Crash</option>
+            <option value="Damper closed" {% if tile and tile.cooling=='Damper closed' %}selected{% endif %}>Damper closed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Results</div>
+      <div class="form-group">
+        <label>Result Notes</label>
+        <textarea name="result_notes" rows="4" placeholder="What did you observe? Surface quality, colour, crazing, crawling, movement…">{{ tile.result_notes if tile else '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Photo</label>
+        {% if tile and tile.photo_path %}
+          <div style="margin-bottom:8px;"><img src="{{ url_for('static', filename=tile.photo_path) }}" style="max-height:120px; border-radius:6px;"></div>
+        {% endif %}
+        <input type="file" name="photo" accept="image/*" capture="environment">
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('test_detail', test_id=test.id) }}" class="btn btn-ghost">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if tile %}Save Changes{% else %}Log Tile{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
