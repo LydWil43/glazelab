@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}{% if glaze %}Edit #{{ glaze.studio_number }}{% else %}New Glaze{% endif %}{% endblock %}
+{% block topbar_title %}{% if glaze %}Edit Glaze{% else %}New Glaze{% endif %}{% endblock %}
+
+{% block content %}
+<div class="form-panel">
+  <form method="post" class="glaze-form">
+
+    <div class="form-section">
+      <div class="form-section-title">Identity</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Studio Number *</label>
+          <input type="text" name="studio_number" value="{{ glaze.studio_number if glaze else '' }}" required placeholder="e.g. 107">
+        </div>
+        <div class="form-group">
+          <label>Glazy ID</label>
+          <input type="text" name="glazy_id" value="{{ glaze.glazy_id if glaze else '' }}" placeholder="e.g. 761728">
+        </div>
+        <div class="form-group">
+          <label>Batch Date</label>
+          <input type="text" name="batch_date" value="{{ glaze.batch_date if glaze else '' }}" placeholder="e.g. 3/27/26">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" name="name" value="{{ glaze.name if glaze else '' }}" required placeholder="Glaze name">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status">
+            <option value="production" {% if glaze and glaze.status=='production' %}selected{% endif %}>Production</option>
+            <option value="testing" {% if not glaze or glaze.status=='testing' %}selected{% endif %}>Testing</option>
+            <option value="draft" {% if glaze and glaze.status=='draft' %}selected{% endif %}>Draft</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cone</label>
+          <input type="text" name="cone" value="{{ glaze.cone if glaze else '' }}" placeholder="e.g. Cone 9–10">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Atmosphere</label>
+          <input type="text" name="atmosphere" value="{{ glaze.atmosphere if glaze else '' }}" placeholder="e.g. Reduction, Oxidation">
+        </div>
+        <div class="form-group">
+          <label>Surface</label>
+          <input type="text" name="surface" value="{{ glaze.surface if glaze else '' }}" placeholder="e.g. Semi-glossy">
+        </div>
+        <div class="form-group">
+          <label>Transparency</label>
+          <input type="text" name="transparency" value="{{ glaze.transparency if glaze else '' }}" placeholder="e.g. Semi-opaque">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Recipe</div>
+      <div id="ingredients-list">
+        {% if glaze %}
+          {% for ing in glaze.ingredients %}
+          <div class="ingredient-row">
+            <input type="text" name="material[]" value="{{ ing.material }}" placeholder="Material name" class="ing-material">
+            <input type="number" name="amount[]" value="{{ ing.amount }}" placeholder="Amount" step="0.01" class="ing-amount">
+            <label class="ing-additive-label">
+              <input type="checkbox" name="is_additive[]" value="{{ loop.index0 }}" {% if ing.is_additive %}checked{% endif %}> Additive
+            </label>
+            <button type="button" class="btn-remove-ing" onclick="removeIngredient(this)">×</button>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="ingredient-row">
+            <input type="text" name="material[]" placeholder="Material name" class="ing-material">
+            <input type="number" name="amount[]" placeholder="Amount" step="0.01" class="ing-amount">
+            <label class="ing-additive-label"><input type="checkbox" name="is_additive[]" value="0"> Additive</label>
+            <button type="button" class="btn-remove-ing" onclick="removeIngredient(this)">×</button>
+          </div>
+        {% endif %}
+      </div>
+      <button type="button" class="btn btn-ghost" onclick="addIngredient()" style="margin-top:8px;">+ Add Material</button>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">UMF Analysis</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Expansion</label>
+          <input type="number" name="umf_expansion" value="{{ glaze.umf_expansion if glaze else '' }}" step="0.1" placeholder="e.g. 6.1">
+        </div>
+        <div class="form-group">
+          <label>R₂O:RO</label>
+          <input type="text" name="umf_r2o_ro" value="{{ glaze.umf_r2o_ro if glaze else '' }}" placeholder="e.g. 0.17:0.83">
+        </div>
+        <div class="form-group">
+          <label>SiO₂:Al₂O₃</label>
+          <input type="number" name="umf_sio2_al2o3" value="{{ glaze.umf_sio2_al2o3 if glaze else '' }}" step="0.01" placeholder="e.g. 6.14">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Na₂O</label><input type="number" name="umf_na2o" value="{{ glaze.umf_na2o if glaze else '' }}" step="0.01"></div>
+        <div class="form-group"><label>K₂O</label><input type="number" name="umf_k2o" value="{{ glaze.umf_k2o if glaze else '' }}" step="0.01"></div>
+        <div class="form-group"><label>CaO</label><input type="number" name="umf_cao" value="{{ glaze.umf_cao if glaze else '' }}" step="0.01"></div>
+        <div class="form-group"><label>MgO</label><input type="number" name="umf_mgo" value="{{ glaze.umf_mgo if glaze else '' }}" step="0.01"></div>
+        <div class="form-group"><label>Al₂O₃</label><input type="number" name="umf_al2o3" value="{{ glaze.umf_al2o3 if glaze else '' }}" step="0.01"></div>
+        <div class="form-group"><label>SiO₂</label><input type="number" name="umf_sio2" value="{{ glaze.umf_sio2 if glaze else '' }}" step="0.01"></div>
+        <div class="form-group"><label>B₂O₃</label><input type="number" name="umf_b2o3" value="{{ glaze.umf_b2o3 if glaze else '' }}" step="0.01"></div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Notes</div>
+      <div class="form-group">
+        <label>Studio Notes</label>
+        <textarea name="notes" rows="4" placeholder="Firing behaviour, observations, known issues…">{{ glaze.notes if glaze else '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Lineage Notes</label>
+        <textarea name="lineage_notes" rows="3" placeholder="Adaptation history, parent glazes…">{{ glaze.lineage_notes if glaze else '' }}</textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <a href="{{ url_for('glazes') }}" class="btn btn-ghost">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if glaze %}Save Changes{% else %}Add Glaze{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
