@@ -1,0 +1,15 @@
+Bird Creek Studios
+
+Glaze Lab
+Library
+🏺 All Glazes ✓ Production ◎ Testing ○ Draft
+Testing
+🧪 Test Series
+Studio
+📦 Materials
+{% block topbar_title %}{% endblock %}
+⌕  
+{% block topbar_actions %}{% endblock %}
+{% with messages = get_flashed_messages(with_categories=true) %} {% for category, message in messages %}
+{{ message }}
+{% endfor %} {% endwith %} {% block content %}{% endblock %}
