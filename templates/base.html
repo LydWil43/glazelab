@@ -1,15 +1,65 @@
-Bird Creek Studios
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Glaze Lab{% endblock %} — Bird Creek Studios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>Bird Creek <em>Studios</em></h1>
+      <div class="sub">Glaze Lab</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Library</div>
+      <a class="nav-item {% if request.endpoint in ['index','glazes','glaze_detail'] %}active{% endif %}" href="{{ url_for('glazes') }}">
+        <span class="icon">🏺</span> All Glazes
+      </a>
+      <a class="nav-item {% if request.args.get('status')=='production' %}active{% endif %}" href="{{ url_for('glazes', status='production') }}">
+        <span class="icon">✓</span> Production
+      </a>
+      <a class="nav-item {% if request.args.get('status')=='testing' %}active{% endif %}" href="{{ url_for('glazes', status='testing') }}">
+        <span class="icon">◎</span> Testing
+      </a>
+      <a class="nav-item {% if request.args.get('status')=='draft' %}active{% endif %}" href="{{ url_for('glazes', status='draft') }}">
+        <span class="icon">○</span> Draft
+      </a>
+      <div class="nav-section-label">Testing</div>
+      <a class="nav-item {% if request.endpoint in ['tests','test_detail','new_test'] %}active{% endif %}" href="{{ url_for('tests') }}">
+        <span class="icon">🧪</span> Test Series
+      </a>
+      <div class="nav-section-label">Studio</div>
+      <a class="nav-item {% if request.endpoint in ['materials','new_material','edit_material'] %}active{% endif %}" href="{{ url_for('materials') }}">
+        <span class="icon">📦</span> Materials
+      </a>
+    </nav>
+  </aside>
 
-Glaze Lab
-Library
-🏺 All Glazes ✓ Production ◎ Testing ○ Draft
-Testing
-🧪 Test Series
-Studio
-📦 Materials
-{% block topbar_title %}{% endblock %}
-⌕  
-{% block topbar_actions %}{% endblock %}
-{% with messages = get_flashed_messages(with_categories=true) %} {% for category, message in messages %}
-{{ message }}
-{% endfor %} {% endwith %} {% block content %}{% endblock %}
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">{% block topbar_title %}{% endblock %}</div>
+      <form class="search-bar" action="{{ url_for('glazes') }}" method="get">
+        <span class="search-icon">⌕</span>
+        <input type="text" name="q" placeholder="Search glazes…" value="{{ request.args.get('q','') }}">
+      </form>
+      {% block topbar_actions %}{% endblock %}
+    </div>
+
+    <div class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
