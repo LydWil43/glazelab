@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}#{{ glaze.studio_number }} {{ glaze.name }}{% endblock %}
+{% block topbar_title %}<a href="{{ url_for('glazes') }}" class="breadcrumb">Glazes</a> / #{{ glaze.studio_number }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('new_test', glaze_id=glaze.id) }}" class="btn btn-ghost">+ Test</a>
+  <a href="{{ url_for('edit_glaze', glaze_id=glaze.id) }}" class="btn btn-ghost">Edit</a>
+{% endblock %}
+
+{% block content %}
+<div class="detail-panel">
+  <div class="detail-header">
+    <div>
+      <div class="detail-num">
+        #{{ glaze.studio_number }}
+        {% if glaze.glazy_id %}· Glazy {{ glaze.glazy_id }}{% endif %}
+        {% if glaze.batch_date %}· {{ glaze.batch_date }}{% endif %}
+      </div>
+      <div class="detail-name">{{ glaze.name }}</div>
+      {% if glaze.glazy_id %}
+        <a class="detail-glazy" href="https://glazy.org/recipes/{{ glaze.glazy_id }}" target="_blank">↗ glazy.org/recipes/{{ glaze.glazy_id }}</a>
+      {% endif %}
+    </div>
+    <div>
+      <span class="status-badge {{ glaze.status }}">{{ glaze.status }}</span>
+    </div>
+  </div>
+
+  <div class="detail-body">
+    <!-- LEFT: Recipe + Tests -->
+    <div class="detail-col">
+      <div class="detail-section-label">Recipe</div>
+      <table class="recipe-table">
+        {% for ing in glaze.ingredients %}
+        <tr {% if ing.is_additive %}class="additive"{% endif %}>
+          <td>{% if ing.is_additive %}+ {% endif %}{{ ing.material }}</td>
+          <td>{{ ing.amount }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+
+      {% if glaze.cone or glaze.atmosphere %}
+      <div style="margin-top:20px;">
+        <div class="detail-section-label">Firing</div>
+        <div class="firing-tags">
+          {% if glaze.cone %}<span class="tag tag-cone10">{{ glaze.cone }}</span>{% endif %}
+          {% if glaze.atmosphere %}
+            {% for atm in glaze.atmosphere.split(',') %}
+              <span class="tag tag-{{ atm.strip().lower().replace(' ','') }}">{{ atm.strip() }}</span>
+            {% endfor %}
+          {% endif %}
+          {% if glaze.surface %}<span class="tag tag-cone10">{{ glaze.surface }}</span>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if glaze.tests %}
+      <div style="margin-top:20px;">
+        <div class="detail-section-label">Tests</div>
+        <div class="test-list">
+          {% for test in glaze.tests %}
+          <a class="test-item" href="{{ url_for('test_detail', test_id=test.id) }}">
+            <div class="test-dot {% if test.status == 'complete' %}fired{% elif test.status == 'fired' %}fired{% endif %}"></div>
+            <div>
+              <div>{{ test.name }}</div>
+              <div class="test-meta">{{ test.tiles|length }} tiles · {{ test.status }}</div>
+            </div>
+            <span class="test-arrow">›</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- RIGHT: UMF + Notes -->
+    <div class="detail-col">
+      {% if glaze.umf_expansion or glaze.umf_al2o3 %}
+      <div class="detail-section-label">UMF Analysis</div>
+      <div class="umf-grid">
+        {% if glaze.umf_expansion %}
+        <div class="umf-item">
+          <div class="umf-label">Expansion</div>
+          <div class="umf-value {% if glaze.umf_expansion and glaze.umf_expansion <= 6.5 %}good{% elif glaze.umf_expansion and glaze.umf_expansion > 8 %}warn{% endif %}">{{ glaze.umf_expansion }}</div>
+        </div>
+        {% endif %}
+        {% if glaze.umf_r2o_ro %}
+        <div class="umf-item">
+          <div class="umf-label">R₂O:RO</div>
+          <div class="umf-value">{{ glaze.umf_r2o_ro }}</div>
+        </div>
+        {% endif %}
+        {% if glaze.umf_sio2_al2o3 %}
+        <div class="umf-item">
+          <div class="umf-label">SiO₂:Al₂O₃</div>
+          <div class="umf-value">{{ glaze.umf_sio2_al2o3 }}</div>
+        </div>
+        {% endif %}
+        {% if glaze.umf_al2o3 %}
+        <div class="umf-item">
+          <div class="umf-label">Al₂O₃</div>
+          <div class="umf-value">{{ glaze.umf_al2o3 }}</div>
+        </div>
+        {% endif %}
+        {% if glaze.umf_mgo %}
+        <div class="umf-item">
+          <div class="umf-label">MgO</div>
+          <div class="umf-value {% if glaze.umf_mgo and glaze.umf_mgo > 0.3 %}warn{% endif %}">{{ glaze.umf_mgo }}</div>
+        </div>
+        {% endif %}
+        {% if glaze.umf_b2o3 %}
+        <div class="umf-item">
+          <div class="umf-label">B₂O₃</div>
+          <div class="umf-value">{{ glaze.umf_b2o3 }}</div>
+        </div>
+        {% endif %}
+        {% if glaze.umf_sio2 %}
+        <div class="umf-item">
+          <div class="umf-label">SiO₂</div>
+          <div class="umf-value">{{ glaze.umf_sio2 }}</div>
+        </div>
+        {% endif %}
+        {% if glaze.umf_cao %}
+        <div class="umf-item">
+          <div class="umf-label">CaO</div>
+          <div class="umf-value">{{ glaze.umf_cao }}</div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if glaze.notes %}
+      <div class="detail-section-label" style="margin-top:20px;">Notes</div>
+      <div class="notes-box">{{ glaze.notes }}</div>
+      {% endif %}
+
+      {% if glaze.lineage_notes %}
+      <div class="detail-section-label">Lineage</div>
+      <div class="notes-box">{{ glaze.lineage_notes }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:16px; text-align:right;">
+  <form action="{{ url_for('delete_glaze', glaze_id=glaze.id) }}" method="post" onsubmit="return confirm('Delete this glaze?')">
+    <button type="submit" class="btn btn-danger">Delete Glaze</button>
+  </form>
+</div>
+{% endblock %}
