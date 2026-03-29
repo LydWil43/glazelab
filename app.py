@@ -309,14 +309,12 @@ def api_glaze(glaze_id):
 
 # ─── INIT ─────────────────────────────────────────────────────────────────────
 
-def init_db():
-    with app.app_context():
-        db.create_all()
-        if Glaze.query.count() == 0:
-            from seed_data import seed
-            seed(db, Glaze, Ingredient, Material)
-            print("Database seeded.")
+
+with app.app_context():
+    db.create_all()
+    if Glaze.query.count() == 0:
+        from seed_data import seed
+        seed(db, Glaze, Ingredient, Material)
 
 if __name__ == '__main__':
-    init_db()
     app.run(host='0.0.0.0', port=5000, debug=True)
