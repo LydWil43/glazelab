@@ -1,12 +1,11 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash,
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from models import db, Glaze, Ingredient, Material, GlazeTest, Tile, FiringLog
 
 app = Flask(__name__)
-
 
 # Config
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-in-production')
@@ -310,13 +309,14 @@ def api_glaze(glaze_id):
 
 # ─── INIT ─────────────────────────────────────────────────────────────────────
 
-
-@app.before_request
-def create_tables():
-    db.create_all()
-    if Glaze.query.count() == 0:
-        from seed_data import seed
-        seed(db, Glaze, Ingredient, Material)
+def init_db():
+    with app.app_context():
+        db.create_all()
+        if Glaze.query.count() == 0:
+            from seed_data import seed
+            seed(db, Glaze, Ingredient, Material)
+            print("Database seeded.")
 
 if __name__ == '__main__':
+    init_db()
     app.run(host='0.0.0.0', port=5000, debug=True)
