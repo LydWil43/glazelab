@@ -316,7 +316,13 @@ def init_db():
             from seed_data import seed
             seed(db, Glaze, Ingredient, Material)
             print("Database seeded.")
+            
+@app.before_request
+def create_tables():
+    db.create_all()
+    if Glaze.query.count() == 0:
+        from seed_data import seed
+        seed(db, Glaze, Ingredient, Material)
 
 if __name__ == '__main__':
-    init_db()
     app.run(host='0.0.0.0', port=5000, debug=True)
