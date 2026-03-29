@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Glazes{% endblock %}
+{% block topbar_title %}All Glazes{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('new_glaze') }}" class="btn btn-primary">+ New Glaze</a>
+{% endblock %}
+
+{% block content %}
+<div class="filter-row">
+  <a class="filter-chip {% if not status_filter %}active{% endif %}" href="{{ url_for('glazes') }}">All</a>
+  <a class="filter-chip {% if status_filter=='production' %}active{% endif %}" href="{{ url_for('glazes', status='production') }}">Production</a>
+  <a class="filter-chip {% if status_filter=='testing' %}active{% endif %}" href="{{ url_for('glazes', status='testing') }}">Testing</a>
+  <a class="filter-chip {% if status_filter=='draft' %}active{% endif %}" href="{{ url_for('glazes', status='draft') }}">Draft</a>
+</div>
+
+<div class="results-meta">{{ glazes|length }} glaze{% if glazes|length != 1 %}s{% endif %}{% if search %} matching "{{ search }}"{% endif %}</div>
+
+<div class="glaze-grid">
+{% for glaze in glazes %}
+<a class="glaze-card" href="{{ url_for('glaze_detail', glaze_id=glaze.id) }}">
+  <div class="card-header">
+    <div>
+      <div class="card-num">#{{ glaze.studio_number }}</div>
+      <div class="card-name">{{ glaze.name }}</div>
+    </div>
+    <div class="status-dot {{ glaze.status }}"></div>
+  </div>
+  <div class="card-meta">
+    {% if glaze.cone %}{{ glaze.cone }}{% endif %}
+    {% if glaze.glazy_id %} · Glazy {{ glaze.glazy_id }}{% endif %}
+  </div>
+  <div class="card-materials">
+    {{ glaze.ingredients[:4]|map(attribute='material')|join(', ') }}{% if glaze.ingredients|length > 4 %}…{% endif %}
+  </div>
+  {% if glaze.atmosphere %}
+  <div class="card-tags">
+    {% for atm in glaze.atmosphere.split(',') %}
+      <span class="tag tag-{{ atm.strip().lower().replace(' ','') }}">{{ atm.strip() }}</span>
+    {% endfor %}
+    {% if glaze.umf_expansion %}
+      <span class="tag tag-cone10">exp {{ glaze.umf_expansion }}</span>
+    {% endif %}
+  </div>
+  {% endif %}
+</a>
+{% else %}
+<div class="empty-state">No glazes found. <a href="{{ url_for('new_glaze') }}">Add one.</a></div>
+{% endfor %}
+</div>
+{% endblock %}
