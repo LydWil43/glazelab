@@ -310,7 +310,8 @@ def api_glaze(glaze_id):
 # ─── INIT ─────────────────────────────────────────────────────────────────────
 
 
-with app.app_context():
+@app.before_request
+def create_tables():
     db.create_all()
     if Glaze.query.count() == 0:
         from seed_data import seed
