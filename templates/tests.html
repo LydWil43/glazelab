@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Tests{% endblock %}
+{% block topbar_title %}Test Series{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('new_test') }}" class="btn btn-primary">+ New Test</a>
+{% endblock %}
+
+{% block content %}
+{% if tests %}
+<div class="test-grid">
+{% for test in tests %}
+<a class="test-card" href="{{ url_for('test_detail', test_id=test.id) }}">
+  <div class="test-card-header">
+    <div>
+      <div class="test-card-glaze">#{{ test.glaze.studio_number }} {{ test.glaze.name }}</div>
+      <div class="test-card-name">{{ test.name }}</div>
+    </div>
+    <span class="status-badge {{ test.status }}">{{ test.status }}</span>
+  </div>
+  <div class="test-card-meta">
+    {{ test.tiles|length }} tiles · {{ test.test_type.replace('_',' ') }} · {{ test.base_batch_size }}g base
+  </div>
+  {% if test.description %}
+  <div class="test-card-desc">{{ test.description[:120] }}{% if test.description|length > 120 %}…{% endif %}</div>
+  {% endif %}
+</a>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty-state">No tests yet. <a href="{{ url_for('new_test') }}">Create one.</a></div>
+{% endif %}
+{% endblock %}
