@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Materials{% endblock %}
+{% block topbar_title %}Materials Inventory{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('new_material') }}" class="btn btn-primary">+ Add Material</a>
+{% endblock %}
+
+{% block content %}
+<div class="detail-panel">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Material</th>
+        <th>Price / lb</th>
+        <th>Stock (lbs)</th>
+        <th>Invoice Date</th>
+        <th>Notes</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for m in materials %}
+    <tr>
+      <td class="material-name">{{ m.name }}</td>
+      <td>{% if m.price_per_lb %}${{ "%.2f"|format(m.price_per_lb) }}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td>{% if m.stock_lbs %}{{ m.stock_lbs }}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td>{% if m.invoice_date %}{{ m.invoice_date }}{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="muted">{{ m.notes or '' }}</td>
+      <td><a href="{{ url_for('edit_material', material_id=m.id) }}" class="table-link">Edit</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="empty-state">No materials yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
