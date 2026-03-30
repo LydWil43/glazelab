@@ -2,6 +2,9 @@
 {% block title %}{{ test.name }}{% endblock %}
 {% block topbar_title %}<a href="{{ url_for('tests') }}" class="breadcrumb">Tests</a> / {{ test.name }}{% endblock %}
 {% block topbar_actions %}
+  <form action="{{ url_for('delete_test', test_id=test.id) }}" method="post" onsubmit="return confirm('Delete this test and all its tiles?')" style="display:inline;">
+    <button type="submit" class="btn btn-danger">Delete Test</button>
+  </form>
   <a href="{{ url_for('new_tile', test_id=test.id) }}" class="btn btn-primary">+ Log Tile</a>
 {% endblock %}
 
@@ -16,6 +19,13 @@
       </div>
       <div class="detail-name">{{ test.name }}</div>
       <div class="card-meta">{{ test.test_type.replace('_',' ') }} · {{ test.base_batch_size }}g base</div>
+      {% if test.glaze.tags %}
+      <div class="card-tags" style="margin-top:6px;">
+        {% for t in test.glaze.tags.split(',') %}
+          <a class="tag" href="{{ url_for('glazes', tag=t.strip()) }}" style="background:var(--clay-pale);color:var(--clay);text-decoration:none;">{{ t.strip() }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
     </div>
     <span class="status-badge {{ test.status }}">{{ test.status }}</span>
   </div>
