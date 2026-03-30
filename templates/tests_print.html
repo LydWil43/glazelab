@@ -145,8 +145,17 @@
 <div class="doc-header">
   <button class="print-btn" onclick="window.print()">Print / Save PDF</button>
   <div class="doc-title">Glaze Test Batch Sheets</div>
-  <div class="doc-meta">Bird Creek Studios · {{ tests|length }} tests · Printed {{ now }}</div>
+  <div class="doc-meta">Bird Creek Studios · {{ tests|length }} test{% if tests|length != 1 %}s{% endif %}{% if tag_filter %} · tag: {{ tag_filter }}{% endif %} · {{ now }}</div>
+  {% if all_tags %}
+  <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;" class="no-print">
+    <a href="{{ url_for('print_tests') }}" style="font-family:'DM Mono',monospace; font-size:11px; padding:4px 12px; border-radius:12px; border:1px solid #ccc; text-decoration:none; color:{% if not tag_filter %}#8B4A2A{% else %}#888{% endif %}; background:{% if not tag_filter %}#F5EAE0{% else %}#fff{% endif %};">All</a>
+    {% for t in all_tags %}
+    <a href="{{ url_for('print_tests', tag=t) }}" style="font-family:'DM Mono',monospace; font-size:11px; padding:4px 12px; border-radius:12px; border:1px solid #ccc; text-decoration:none; color:{% if tag_filter==t %}#8B4A2A{% else %}#888{% endif %}; background:{% if tag_filter==t %}#F5EAE0{% else %}#fff{% endif %};">{{ t }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
+<style>.no-print { } @media print { .no-print { display:none !important; } }</style>
 
 {% for test in tests %}
 <div class="test-block">
