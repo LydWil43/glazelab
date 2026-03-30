@@ -56,10 +56,12 @@
         <span class="notes-toggle-icon">▸</span>
       </button>
       <div class="glaze-notes-panel" style="display:none; margin-top:12px;">
-        {% if test.glaze.notes %}
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+          <textarea id="new-note-text" rows="2" placeholder="Add a dated note…" style="flex:1; font-family:'DM Mono',monospace; font-size:12px; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); resize:vertical;"></textarea>
+          <button onclick="submitNote({{ test.glaze.id }})" style="align-self:flex-start; padding:8px 14px; background:var(--clay); color:#fff; border:none; border-radius:6px; font-family:'DM Mono',monospace; font-size:11px; cursor:pointer; white-space:nowrap;">+ Add Note</button>
+        </div>
         <div class="detail-section-label">Studio Notes</div>
-        <div class="notes-box" style="margin-bottom:14px; white-space:pre-wrap;">{{ test.glaze.notes }}</div>
-        {% endif %}
+        <div id="studio-notes-box" class="notes-box" style="margin-bottom:14px; white-space:pre-wrap;">{{ test.glaze.notes or '' }}</div>
         {% if test.glaze.lineage_notes %}
         <div class="detail-section-label">Lineage</div>
         <div class="notes-box" style="margin-bottom:14px; white-space:pre-wrap;">{{ test.glaze.lineage_notes }}</div>
@@ -204,6 +206,24 @@ function toggleGlazeNotes(btn) {
   panel.style.display = open ? 'block' : 'none';
   icon.textContent    = open ? '▾' : '▸';
   btn.setAttribute('aria-expanded', open);
+}
+
+function submitNote(glazeId) {
+  const ta   = document.getElementById('new-note-text');
+  const text = ta.value.trim();
+  if (!text) return;
+  fetch('/glazes/' + glazeId + '/note', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({text: text})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.notes) {
+      document.getElementById('studio-notes-box').innerText = data.notes;
+      ta.value = '';
+    }
+  });
 }
 </script>
 <style>
