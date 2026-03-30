@@ -7,10 +7,16 @@
 
 {% block content %}
 <div class="filter-row">
-  <a class="filter-chip {% if not status_filter %}active{% endif %}" href="{{ url_for('glazes') }}">All</a>
+  <a class="filter-chip {% if not status_filter and not tag_filter %}active{% endif %}" href="{{ url_for('glazes') }}">All</a>
   <a class="filter-chip {% if status_filter=='production' %}active{% endif %}" href="{{ url_for('glazes', status='production') }}">Production</a>
   <a class="filter-chip {% if status_filter=='testing' %}active{% endif %}" href="{{ url_for('glazes', status='testing') }}">Testing</a>
   <a class="filter-chip {% if status_filter=='draft' %}active{% endif %}" href="{{ url_for('glazes', status='draft') }}">Draft</a>
+  {% if all_tags %}
+  <span style="color:var(--border-strong); margin:0 4px;">|</span>
+  {% for t in all_tags %}
+  <a class="filter-chip {% if tag_filter==t %}active{% endif %}" href="{{ url_for('glazes', tag=t) }}">{{ t }}</a>
+  {% endfor %}
+  {% endif %}
 </div>
 
 <div class="results-meta">{{ glazes|length }} glaze{% if glazes|length != 1 %}s{% endif %}{% if search %} matching "{{ search }}"{% endif %}</div>
@@ -32,16 +38,18 @@
   <div class="card-materials">
     {{ glaze.ingredients[:4]|map(attribute='material')|join(', ') }}{% if glaze.ingredients|length > 4 %}…{% endif %}
   </div>
-  {% if glaze.atmosphere %}
   <div class="card-tags">
-    {% for atm in glaze.atmosphere.split(',') %}
-      <span class="tag tag-{{ atm.strip().lower().replace(' ','') }}">{{ atm.strip() }}</span>
-    {% endfor %}
-    {% if glaze.umf_expansion %}
-      <span class="tag tag-cone10">exp {{ glaze.umf_expansion }}</span>
+    {% if glaze.atmosphere %}
+      {% for atm in glaze.atmosphere.split(',') %}
+        <span class="tag tag-{{ atm.strip().lower().replace(' ','') }}">{{ atm.strip() }}</span>
+      {% endfor %}
+    {% endif %}
+    {% if glaze.tags %}
+      {% for t in glaze.tags.split(',') %}
+        <span class="tag" style="background:var(--surface-2);color:var(--text-mid);">{{ t.strip() }}</span>
+      {% endfor %}
     {% endif %}
   </div>
-  {% endif %}
 </a>
 {% else %}
 <div class="empty-state">No glazes found. <a href="{{ url_for('new_glaze') }}">Add one.</a></div>
