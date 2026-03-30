@@ -6,7 +6,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="detail-panel" style="margin-bottom:24px;">
+
+{# ── Test header ── #}
+<div class="detail-panel" style="margin-bottom:16px;">
   <div class="detail-header">
     <div>
       <div class="detail-num">
@@ -17,60 +19,187 @@
     </div>
     <span class="status-badge {{ test.status }}">{{ test.status }}</span>
   </div>
-  {% if test.description %}
-  <div style="padding:0 28px 20px;">
-    <div class="notes-box">{{ test.description }}</div>
-  </div>
-  {% endif %}
 </div>
 
-{% if test.tiles %}
-<div class="tiles-grid">
-{% for tile in test.tiles %}
-<div class="tile-card {% if tile.atmosphere %}fired{% endif %}">
-  <div class="tile-header">
-    <div class="tile-num">Tile {{ tile.tile_number }}</div>
-    <div class="tile-status">{% if tile.atmosphere %}Fired{% else %}Pending{% endif %}</div>
-  </div>
+{# ── Recipe + Glaze Notes ── #}
+<div class="detail-panel" style="margin-bottom:16px;">
+  <div class="detail-body">
 
-  {% if tile.photo_path %}
-  <div class="tile-photo">
-    <img src="{{ url_for('static', filename=tile.photo_path) }}" alt="Tile {{ tile.tile_number }}">
+    {# Left: base recipe #}
+    <div class="detail-col">
+      <div class="detail-section-label">Base Recipe</div>
+      {% set base_ings = test.glaze.ingredients | rejectattr('is_additive') | list %}
+      {% set add_ings  = test.glaze.ingredients | selectattr('is_additive') | list %}
+      {% if base_ings or add_ings %}
+      <table class="recipe-table">
+        {% for ing in base_ings %}
+        <tr><td>{{ ing.material }}</td><td>{{ ing.amount }}g</td></tr>
+        {% endfor %}
+        {% if add_ings %}
+        <tr>
+          <td colspan="2" style="padding-top:12px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted);">Additives</td>
+        </tr>
+        {% for ing in add_ings %}
+        <tr class="additive"><td>+ {{ ing.material }}</td><td>{{ ing.amount }}g</td></tr>
+        {% endfor %}
+        {% endif %}
+      </table>
+      {% else %}
+      <span class="muted" style="font-size:12px;">No recipe on file.</span>
+      {% endif %}
+    </div>
+
+    {# Right: glaze notes accordion #}
+    <div class="detail-col">
+      <button class="notes-toggle-btn" onclick="toggleGlazeNotes(this)" aria-expanded="false">
+        <span class="detail-section-label" style="margin:0;">Glaze Notes</span>
+        <span class="notes-toggle-icon">▸</span>
+      </button>
+      <div class="glaze-notes-panel" style="display:none; margin-top:12px;">
+        {% if test.glaze.notes %}
+        <div class="detail-section-label">Studio Notes</div>
+        <div class="notes-box" style="margin-bottom:14px; white-space:pre-wrap;">{{ test.glaze.notes }}</div>
+        {% endif %}
+        {% if test.glaze.lineage_notes %}
+        <div class="detail-section-label">Lineage</div>
+        <div class="notes-box" style="margin-bottom:14px; white-space:pre-wrap;">{{ test.glaze.lineage_notes }}</div>
+        {% endif %}
+        {% if test.glaze.umf_expansion or test.glaze.umf_na2o or test.glaze.umf_sio2 %}
+        <div class="detail-section-label">UMF</div>
+        <div class="umf-grid">
+          {% if test.glaze.umf_expansion %}
+          <div class="umf-item"><div class="umf-label">Expansion</div><div class="umf-value">{{ test.glaze.umf_expansion }}</div></div>
+          {% endif %}
+          {% if test.glaze.umf_r2o_ro %}
+          <div class="umf-item"><div class="umf-label">R₂O:RO</div><div class="umf-value">{{ test.glaze.umf_r2o_ro }}</div></div>
+          {% endif %}
+          {% if test.glaze.umf_sio2_al2o3 %}
+          <div class="umf-item"><div class="umf-label">SiO₂:Al₂O₃</div><div class="umf-value">{{ test.glaze.umf_sio2_al2o3 }}</div></div>
+          {% endif %}
+          {% if test.glaze.umf_na2o %}<div class="umf-item"><div class="umf-label">Na₂O</div><div class="umf-value">{{ test.glaze.umf_na2o }}</div></div>{% endif %}
+          {% if test.glaze.umf_k2o %}<div class="umf-item"><div class="umf-label">K₂O</div><div class="umf-value">{{ test.glaze.umf_k2o }}</div></div>{% endif %}
+          {% if test.glaze.umf_cao %}<div class="umf-item"><div class="umf-label">CaO</div><div class="umf-value">{{ test.glaze.umf_cao }}</div></div>{% endif %}
+          {% if test.glaze.umf_mgo %}<div class="umf-item"><div class="umf-label">MgO</div><div class="umf-value">{{ test.glaze.umf_mgo }}</div></div>{% endif %}
+          {% if test.glaze.umf_al2o3 %}<div class="umf-item"><div class="umf-label">Al₂O₃</div><div class="umf-value">{{ test.glaze.umf_al2o3 }}</div></div>{% endif %}
+          {% if test.glaze.umf_sio2 %}<div class="umf-item"><div class="umf-label">SiO₂</div><div class="umf-value">{{ test.glaze.umf_sio2 }}</div></div>{% endif %}
+          {% if test.glaze.umf_b2o3 %}<div class="umf-item"><div class="umf-label">B₂O₃</div><div class="umf-value">{{ test.glaze.umf_b2o3 }}</div></div>{% endif %}
+        </div>
+        {% endif %}
+        {% if not test.glaze.notes and not test.glaze.lineage_notes and not test.glaze.umf_expansion %}
+        <span class="muted" style="font-size:12px;">No notes on file for this glaze.</span>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# ── Progression table ── #}
+<div class="detail-panel" style="margin-bottom:24px;">
+  <div style="padding:16px 24px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+    <div class="detail-section-label" style="margin:0;">Progression</div>
+    <span class="card-meta">{{ test.tiles | length }} tile{{ 's' if test.tiles | length != 1 }}</span>
+  </div>
+  {% if test.tiles %}
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tile</th>
+          <th>Additions</th>
+          <th>Cone</th>
+          <th>Atmosphere</th>
+          <th>Result</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tile in test.tiles %}
+        <tr>
+          <td><span style="font-family:'DM Mono',monospace; font-size:12px; color:var(--clay);">{{ tile.tile_number }}</span></td>
+          <td style="max-width:280px;">{{ tile.additions or '—' }}</td>
+          <td>{{ tile.cone or '—' }}</td>
+          <td>{{ tile.atmosphere or '—' }}</td>
+          <td>
+            {% if tile.result_notes %}
+            <span style="font-size:12px; color:var(--text-mid);">{{ tile.result_notes[:60] }}{% if tile.result_notes|length > 60 %}…{% endif %}</span>
+            {% elif tile.atmosphere %}
+            <span class="muted" style="font-size:12px;">Fired — no notes</span>
+            {% else %}
+            <span class="muted" style="font-size:12px;">Pending</span>
+            {% endif %}
+          </td>
+          <td><a href="{{ url_for('edit_tile', tile_id=tile.id) }}" class="table-link">Edit</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
   {% else %}
-  <div class="tile-photo-placeholder">No photo</div>
+  <div style="padding:20px 24px;">
+    {% if test.description %}
+    <div class="notes-box" style="margin-bottom:16px; white-space:pre-wrap;">{{ test.description }}</div>
+    {% endif %}
+    <div class="empty-state" style="padding:16px 0 0;">
+      No tiles logged yet. <a href="{{ url_for('new_tile', test_id=test.id) }}">Log the first tile.</a>
+    </div>
+  </div>
   {% endif %}
+</div>
 
+{# ── Tile photo cards (only when tiles have photos or detailed notes) ── #}
+{% if test.tiles and test.tiles | selectattr('photo_path') | list %}
+<div class="tiles-grid">
+{% for tile in test.tiles %}
+{% if tile.photo_path %}
+<div class="tile-card fired">
+  <div class="tile-header">
+    <div class="tile-num">Tile {{ tile.tile_number }}</div>
+    <div class="tile-status">{{ tile.atmosphere or 'Fired' }}</div>
+  </div>
+  <div class="tile-photo">
+    <img src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" alt="Tile {{ tile.tile_number }}">
+  </div>
   <div class="tile-body">
-    {% if tile.additions %}
-    <div class="tile-additions">{{ tile.additions }}</div>
-    {% endif %}
-
-    <div class="tile-meta-row">
-      {% if tile.thickness %}<span class="tile-meta-item">Thickness: {{ tile.thickness }}/10</span>{% endif %}
-      {% if tile.wood_ash_on_top %}<span class="tile-meta-item tile-ash">Ash on top</span>{% endif %}
-    </div>
-
-    {% if tile.atmosphere %}
-    <div class="tile-firing">
-      {% if tile.cone %}<span class="tile-firing-item">{{ tile.cone }}</span>{% endif %}
-      {% if tile.atmosphere %}<span class="tile-firing-item">{{ tile.atmosphere }}</span>{% endif %}
-      {% if tile.body_reduction %}<span class="tile-firing-item">Body: {{ tile.body_reduction }}</span>{% endif %}
-      {% if tile.glaze_reduction %}<span class="tile-firing-item">Glaze: {{ tile.glaze_reduction }}</span>{% endif %}
-      {% if tile.cooling %}<span class="tile-firing-item">Cool: {{ tile.cooling }}</span>{% endif %}
-    </div>
-    {% endif %}
-
-    {% if tile.result_notes %}
-    <div class="tile-notes">{{ tile.result_notes }}</div>
-    {% endif %}
-
-    <a href="{{ url_for('edit_tile', tile_id=tile.id) }}" class="tile-edit-link">Edit</a>
+    {% if tile.additions %}<div class="tile-additions">{{ tile.additions }}</div>{% endif %}
+    {% if tile.result_notes %}<div class="tile-notes">{{ tile.result_notes }}</div>{% endif %}
   </div>
 </div>
+{% endif %}
 {% endfor %}
 </div>
-{% else %}
-<div class="empty-state">No tiles logged yet. <a href="{{ url_for('new_tile', test_id=test.id) }}">Log the first tile.</a></div>
 {% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleGlazeNotes(btn) {
+  const panel = btn.nextElementSibling;
+  const icon  = btn.querySelector('.notes-toggle-icon');
+  const open  = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  icon.textContent    = open ? '▾' : '▸';
+  btn.setAttribute('aria-expanded', open);
+}
+</script>
+<style>
+.notes-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+.notes-toggle-btn:hover .notes-toggle-icon { color: var(--clay); }
+.notes-toggle-icon {
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+</style>
 {% endblock %}
