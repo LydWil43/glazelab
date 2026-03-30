@@ -7,10 +7,14 @@
 
 {% block content %}
 <div class="filter-row">
-  <a class="filter-chip {% if not status_filter and not tag_filter %}active{% endif %}" href="{{ url_for('glazes') }}">All</a>
+  <a class="filter-chip {% if not status_filter and not tag_filter and not category_filter %}active{% endif %}" href="{{ url_for('glazes') }}">All</a>
   <a class="filter-chip {% if status_filter=='production' %}active{% endif %}" href="{{ url_for('glazes', status='production') }}">Production</a>
   <a class="filter-chip {% if status_filter=='testing' %}active{% endif %}" href="{{ url_for('glazes', status='testing') }}">Testing</a>
   <a class="filter-chip {% if status_filter=='draft' %}active{% endif %}" href="{{ url_for('glazes', status='draft') }}">Draft</a>
+  <span style="color:var(--border-strong); margin:0 4px;">|</span>
+  {% for cat in ['liner','slip','ash','shino','tenmoku','celadon','matte','crystal-macro','crystal-micro','glaze'] %}
+  <a class="filter-chip {% if category_filter==cat %}active{% endif %}" href="{{ url_for('glazes', category=cat) }}">{{ cat }}</a>
+  {% endfor %}
   {% if all_tags %}
   <span style="color:var(--border-strong); margin:0 4px;">|</span>
   {% for t in all_tags %}
