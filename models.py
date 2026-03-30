@@ -97,6 +97,7 @@ class GlazeTest(db.Model):
     test_type = db.Column(db.String(50))  # wet_progression, discrete_batch
     base_batch_size = db.Column(db.Float)
     status = db.Column(db.String(50), default='planned')  # planned, mixed, fired, complete
+    progression_plan = db.Column(db.Text)  # JSON: {headers, rows, note}
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     tiles = db.relationship('Tile', backref='test', cascade='all, delete-orphan', order_by='Tile.tile_number')
