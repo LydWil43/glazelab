@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit Fire' if fire else 'New Fire' }}{% endblock %}
+{% block topbar_title %}
+  <a href="{{ url_for('fires') }}" class="breadcrumb">Fires</a> / {{ 'Edit' if fire else 'New Fire' }}
+{% endblock %}
+
+{% block content %}
+<div class="detail-panel" style="max-width:540px;">
+  <div style="padding:24px 28px;">
+    <form method="post">
+      <div class="form-group">
+        <label>Name *</label>
+        <input type="text" name="name" value="{{ fire.name if fire else '' }}" required placeholder="e.g. April Cone 10 Reduction">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cone</label>
+          <input type="text" name="cone" value="{{ fire.cone if fire else '' }}" placeholder="10">
+        </div>
+        <div class="form-group">
+          <label>Atmosphere</label>
+          <select name="atmosphere">
+            <option value="">—</option>
+            {% for atm in ['reduction','oxidation','neutral','wood'] %}
+            <option value="{{ atm }}" {% if fire and fire.atmosphere==atm %}selected{% endif %}>{{ atm.capitalize() }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select name="status">
+          {% for s in ['planning','fired','archived'] %}
+          <option value="{{ s }}" {% if fire and fire.status==s %}selected{% elif not fire and s=='planning' %}selected{% endif %}>{{ s.capitalize() }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:24px;">
+        <button type="submit" class="btn btn-primary">{{ 'Save' if fire else 'Create Fire' }}</button>
+        <a href="{{ url_for('fire_detail', fire_id=fire.id) if fire else url_for('fires') }}" class="btn btn-ghost">Cancel</a>
+        {% if fire %}
+        <form action="{{ url_for('delete_fire', fire_id=fire.id) }}" method="post" style="margin-left:auto;" onsubmit="return confirm('Delete this fire? Tests will be unassigned.')">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
