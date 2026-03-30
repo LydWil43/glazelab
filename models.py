@@ -18,6 +18,8 @@ class Glaze(db.Model):
     lineage_notes = db.Column(db.Text)
     batch_date = db.Column(db.String(50))
     tags = db.Column(db.String(300))  # comma-separated e.g. "liner,ash,crystalline"
+    primary_category = db.Column(db.String(50))
+    secondary_category = db.Column(db.String(50))
     # UMF fields
     umf_expansion = db.Column(db.Float)
     umf_r2o_ro = db.Column(db.String(50))
