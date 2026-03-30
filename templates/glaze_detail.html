@@ -56,18 +56,24 @@
       {% if glaze.tests %}
       <div style="margin-top:20px;">
         <div class="detail-section-label">Tests</div>
-        <div class="test-list">
+        <table class="recipe-table" style="width:100%;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); padding:0 0 8px; font-weight:400;">Name</th>
+              <th style="text-align:right; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); padding:0 0 8px; font-weight:400;">Tiles</th>
+              <th style="text-align:right; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); padding:0 0 8px; font-weight:400;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
           {% for test in glaze.tests %}
-          <a class="test-item" href="{{ url_for('test_detail', test_id=test.id) }}">
-            <div class="test-dot {% if test.status == 'complete' %}fired{% elif test.status == 'fired' %}fired{% endif %}"></div>
-            <div>
-              <div>{{ test.name }}</div>
-              <div class="test-meta">{{ test.tiles|length }} tiles · {{ test.status }}</div>
-            </div>
-            <span class="test-arrow">›</span>
-          </a>
+          <tr style="cursor:pointer;" onclick="window.location='{{ url_for('test_detail', test_id=test.id) }}'">
+            <td style="text-align:left; color:var(--text);">{{ test.name }}</td>
+            <td style="text-align:right; font-family:'DM Mono',monospace; font-size:12px; color:var(--text-muted);">{{ test.tiles|length }}</td>
+            <td style="text-align:right;"><span class="status-badge {{ test.status }}">{{ test.status }}</span></td>
+          </tr>
           {% endfor %}
-        </div>
+          </tbody>
+        </table>
       </div>
       {% endif %}
     </div>
