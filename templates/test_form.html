@@ -3,33 +3,43 @@
 {% block topbar_title %}New Test Series{% endblock %}
 {% block content %}
 <div class="form-panel">
-  <form method="post">
+  <form method="post" id="test-form">
     <div class="form-section">
       <div class="form-group">
         <label>Glaze *</label>
-        <select name="glaze_id" required>
+        <select name="glaze_id" id="glaze-select" required>
           <option value="">Select a glaze…</option>
           {% for glaze in glazes %}
-          <option value="{{ glaze.id }}" {% if preselected_glaze and glaze.id|string == preselected_glaze %}selected{% endif %}>#{{ glaze.studio_number }} — {{ glaze.name }}</option>
+          <option value="{{ glaze.id }}" data-num="{{ glaze.studio_number }}" {% if preselected_glaze and glaze.id|string == preselected_glaze %}selected{% endif %}>#{{ glaze.studio_number }} — {{ glaze.name }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="form-group">
-        <label>Test Name *</label>
-        <input type="text" name="name" required placeholder="e.g. Rutile + Zircopax Progression">
-      </div>
       <div class="form-row">
         <div class="form-group">
+          <label>Oxide / Colorant</label>
+          <select name="oxide" id="oxide-select">
+            <option value="">— none —</option>
+            {% for ox in ['Iron','Rutile','Cobalt','Copper','Manganese','Tin','Zircopax','Titanium','Chrome','Nickel','Barium','Strontium'] %}
+            <option value="{{ ox }}">{{ ox }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
           <label>Test Type</label>
-          <select name="test_type">
+          <select name="test_type" id="type-select">
             <option value="wet_progression">Wet Progression</option>
             <option value="discrete_batch">Discrete Batch</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>Base Batch Size (g)</label>
-          <input type="number" name="base_batch_size" value="100" step="0.1">
-        </div>
+      </div>
+      <div class="form-group">
+        <label>Generated Name</label>
+        <div style="font-family:'DM Mono',monospace; font-size:13px; padding:8px 12px; background:var(--surface-2); border-radius:6px; color:var(--text-mid); min-height:36px;" id="name-preview">—</div>
+        <input type="hidden" name="name" id="name-hidden">
+      </div>
+      <div class="form-group">
+        <label>Base Batch Size (g)</label>
+        <input type="number" name="base_batch_size" value="100" step="0.1">
       </div>
       <div class="form-group">
         <label>Description</label>
@@ -42,4 +52,37 @@
     </div>
   </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TYPE_LABELS = { wet_progression: 'Progression', discrete_batch: 'Discrete Batch' };
+
+function buildName() {
+  const glazeOpt = document.getElementById('glaze-select').selectedOptions[0];
+  const num = glazeOpt && glazeOpt.dataset.num ? '#' + glazeOpt.dataset.num : '';
+  const oxide = document.getElementById('oxide-select').value;
+  const typeVal = document.getElementById('type-select').value;
+  const typeLabel = TYPE_LABELS[typeVal] || typeVal;
+
+  const parts = [num, oxide, typeLabel].filter(Boolean);
+  const name = parts.join(' – ');
+
+  document.getElementById('name-preview').textContent = name || '—';
+  document.getElementById('name-hidden').value = name;
+}
+
+document.getElementById('glaze-select').addEventListener('change', buildName);
+document.getElementById('oxide-select').addEventListener('change', buildName);
+document.getElementById('type-select').addEventListener('change', buildName);
+
+document.getElementById('test-form').addEventListener('submit', function(e) {
+  if (!document.getElementById('name-hidden').value) {
+    e.preventDefault();
+    alert('Select a glaze and test type first.');
+  }
+});
+
+buildName();
+</script>
 {% endblock %}
