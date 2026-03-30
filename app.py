@@ -67,10 +67,13 @@ def index():
 @app.route('/glazes')
 def glazes():
     status_filter = request.args.get('status', '')
+    tag_filter = request.args.get('tag', '')
     search = request.args.get('q', '')
     query = Glaze.query
     if status_filter:
         query = query.filter_by(status=status_filter)
+    if tag_filter:
+        query = query.filter(Glaze.tags.ilike(f'%{tag_filter}%'))
     if search:
         query = query.filter(
             db.or_(
@@ -79,8 +82,14 @@ def glazes():
                 Glaze.notes.ilike(f'%{search}%')
             )
         )
-    glazes = query.order_by(Glaze.studio_number).all()
-    return render_template('glazes.html', glazes=glazes, status_filter=status_filter, search=search)
+    all_glazes = query.order_by(Glaze.studio_number).all()
+    # Collect all unique tags for filter chips
+    all_tags = sorted(set(
+        t.strip() for g in Glaze.query.all()
+        if g.tags for t in g.tags.split(',') if t.strip()
+    ))
+    return render_template('glazes.html', glazes=all_glazes, status_filter=status_filter,
+                           tag_filter=tag_filter, search=search, all_tags=all_tags)
 
 @app.route('/glazes/<int:glaze_id>')
 def glaze_detail(glaze_id):
@@ -102,6 +111,7 @@ def new_glaze():
             notes=request.form.get('notes', ''),
             lineage_notes=request.form.get('lineage_notes', ''),
             batch_date=request.form.get('batch_date', ''),
+            tags=request.form.get('tags', ''),
             umf_expansion=float(request.form['umf_expansion']) if request.form.get('umf_expansion') else None,
             umf_r2o_ro=request.form.get('umf_r2o_ro', ''),
             umf_sio2_al2o3=float(request.form['umf_sio2_al2o3']) if request.form.get('umf_sio2_al2o3') else None,
@@ -151,6 +161,7 @@ def edit_glaze(glaze_id):
         glaze.notes = request.form.get('notes', '')
         glaze.lineage_notes = request.form.get('lineage_notes', '')
         glaze.batch_date = request.form.get('batch_date', '')
+        glaze.tags = request.form.get('tags', '')
         glaze.umf_expansion = float(request.form['umf_expansion']) if request.form.get('umf_expansion') else None
         glaze.umf_r2o_ro = request.form.get('umf_r2o_ro', '')
         glaze.umf_sio2_al2o3 = float(request.form['umf_sio2_al2o3']) if request.form.get('umf_sio2_al2o3') else None
@@ -238,6 +249,14 @@ def new_test():
 def test_detail(test_id):
     test = GlazeTest.query.get_or_404(test_id)
     return render_template('test_detail.html', test=test)
+
+@app.route('/tests/<int:test_id>/delete', methods=['POST'])
+def delete_test(test_id):
+    test = GlazeTest.query.get_or_404(test_id)
+    db.session.delete(test)
+    db.session.commit()
+    flash('Test deleted.', 'success')
+    return redirect(url_for('tests'))
 
 @app.route('/tests/<int:test_id>/tiles/new', methods=['GET', 'POST'])
 def new_tile(test_id):
@@ -331,9 +350,18 @@ def edit_material(material_id):
 
 @app.route('/tests/print')
 def print_tests():
-    all_tests = GlazeTest.query.order_by(GlazeTest.glaze_id, GlazeTest.id).all()
+    tag_filter = request.args.get('tag', '')
+    query = GlazeTest.query
+    if tag_filter:
+        query = query.join(Glaze).filter(Glaze.tags.ilike(f'%{tag_filter}%'))
+    all_tests = query.order_by(GlazeTest.glaze_id, GlazeTest.id).all()
+    all_tags = sorted(set(
+        t.strip() for g in Glaze.query.all()
+        if g.tags for t in g.tags.split(',') if t.strip()
+    ))
     now = datetime.utcnow().strftime('%B %d, %Y')
-    return render_template('tests_print.html', tests=all_tests, now=now)
+    return render_template('tests_print.html', tests=all_tests, now=now,
+                           all_tags=all_tags, tag_filter=tag_filter)
 
 # ─── API ─────────────────────────────────────────────────────────────────────
 
