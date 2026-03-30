@@ -15,7 +15,11 @@
         </div>
         <div class="form-group">
           <label>Glazy ID</label>
-          <input type="text" name="glazy_id" value="{{ glaze.glazy_id if glaze else '' }}" placeholder="e.g. 761728">
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" name="glazy_id" id="glazy_id_input" value="{{ glaze.glazy_id if glaze else '' }}" placeholder="e.g. 761728">
+            <button type="button" class="btn btn-ghost" id="glazy-fetch-btn" onclick="fetchFromGlazy()">Fetch</button>
+          </div>
+          <div id="glazy-fetch-status" style="font-size:0.8rem;margin-top:4px;"></div>
         </div>
         <div class="form-group">
           <label>Batch Date</label>
@@ -25,6 +29,10 @@
       <div class="form-group">
         <label>Name *</label>
         <input type="text" name="name" value="{{ glaze.name if glaze else '' }}" required placeholder="Glaze name">
+      </div>
+      <div class="form-group">
+        <label>Tags</label>
+        <input type="text" name="tags" value="{{ glaze.tags if glaze else '' }}" placeholder="e.g. liner, ash, crystalline">
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -127,4 +135,48 @@
     </div>
   </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function fetchFromGlazy() {
+  const glazyId = document.getElementById('glazy_id_input').value.trim();
+  if (!glazyId) { alert('Enter a Glazy ID first.'); return; }
+
+  const btn = document.getElementById('glazy-fetch-btn');
+  const status = document.getElementById('glazy-fetch-status');
+  btn.disabled = true;
+  btn.textContent = 'Fetching…';
+  status.textContent = '';
+
+  try {
+    const resp = await fetch(`/api/glazy-fetch/${glazyId}`);
+    const data = await resp.json();
+
+    if (data.error) {
+      status.style.color = 'var(--color-error, #c0392b)';
+      status.textContent = 'Could not fetch: ' + data.error;
+      return;
+    }
+
+    const fields = ['umf_na2o','umf_k2o','umf_cao','umf_mgo','umf_al2o3',
+                    'umf_sio2','umf_b2o3','umf_r2o_ro','umf_sio2_al2o3'];
+    let filled = 0;
+    for (const key of fields) {
+      if (data[key] !== null && data[key] !== undefined) {
+        const el = document.querySelector(`[name="${key}"]`);
+        if (el) { el.value = data[key]; filled++; }
+      }
+    }
+    status.style.color = filled > 0 ? 'var(--color-success, #27ae60)' : 'inherit';
+    status.textContent = filled > 0 ? `Filled ${filled} UMF fields from Glazy.` : 'Connected but no UMF data found for this ID.';
+  } catch (e) {
+    status.style.color = 'var(--color-error, #c0392b)';
+    status.textContent = 'Network error. Try again.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Fetch';
+  }
+}
+</script>
 {% endblock %}
