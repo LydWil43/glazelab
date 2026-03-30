@@ -1,4 +1,10 @@
 import os
+import urllib.request
+import json as _json
+from dotenv import load_dotenv
+load_dotenv()
+import cloudinary
+import cloudinary.uploader
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
@@ -20,8 +26,35 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'heic', 'webp'}
 
 db.init_app(app)
 
+# Cloudinary config (set CLOUDINARY_URL or individual env vars)
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
+)
+USE_CLOUDINARY = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
+
+app.jinja_env.filters['fromjson'] = _json.loads
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def upload_photo(file):
+    """Upload a photo file and return a URL string, or None on failure."""
+    if not (file and file.filename and allowed_file(file.filename)):
+        return None
+    if USE_CLOUDINARY:
+        result = cloudinary.uploader.upload(
+            file,
+            folder='glazelab',
+            resource_type='image',
+        )
+        return result['secure_url']
+    # fallback: save locally
+    filename = secure_filename(f"tile_{datetime.utcnow().timestamp()}_{file.filename}")
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    return f"uploads/{filename}"
 
 # ─── ROUTES ──────────────────────────────────────────────────────────────────
 
@@ -198,14 +231,7 @@ def test_detail(test_id):
 def new_tile(test_id):
     test = GlazeTest.query.get_or_404(test_id)
     if request.method == 'POST':
-        photo_path = None
-        if 'photo' in request.files:
-            file = request.files['photo']
-            if file and file.filename and allowed_file(file.filename):
-                filename = secure_filename(f"tile_{test_id}_{datetime.utcnow().timestamp()}_{file.filename}")
-                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                photo_path = f"uploads/{filename}"
+        photo_path = upload_photo(request.files.get('photo'))
 
         tile = Tile(
             test_id=test_id,
@@ -233,13 +259,9 @@ def new_tile(test_id):
 def edit_tile(tile_id):
     tile = Tile.query.get_or_404(tile_id)
     if request.method == 'POST':
-        if 'photo' in request.files:
-            file = request.files['photo']
-            if file and file.filename and allowed_file(file.filename):
-                filename = secure_filename(f"tile_{tile_id}_{datetime.utcnow().timestamp()}_{file.filename}")
-                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                tile.photo_path = f"uploads/{filename}"
+        new_photo = upload_photo(request.files.get('photo'))
+        if new_photo:
+            tile.photo_path = new_photo
 
         tile.additions = request.form.get('additions', '')
         tile.thickness = int(request.form['thickness']) if request.form.get('thickness') else None
@@ -307,6 +329,52 @@ def api_glaze(glaze_id):
     glaze = Glaze.query.get_or_404(glaze_id)
     return jsonify(glaze.to_dict())
 
+@app.route('/api/glazy-fetch/<glazy_id>')
+def glazy_fetch(glazy_id):
+    """Proxy a Glazy recipe and return UMF analysis fields."""
+    try:
+        url = f"https://glazy.org/api/recipes/{glazy_id}"
+        req = urllib.request.Request(url, headers={'Accept': 'application/json', 'User-Agent': 'GlazeLab/1.0'})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = _json.loads(resp.read())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 502
+
+    # Glazy nests analysis under data.analysis.umf_oxide
+    recipe = data.get('data', data)
+    analysis = recipe.get('analysis', {})
+    umf = analysis.get('umf_oxide', {})
+    percent = analysis.get('percent_oxide', {})
+
+    def f(d, key):
+        v = d.get(key)
+        return round(float(v), 4) if v is not None else None
+
+    r2o = None
+    na2o = f(umf, 'Na2O')
+    k2o  = f(umf, 'K2O')
+    if na2o is not None and k2o is not None:
+        total = (na2o or 0) + (k2o or 0)
+        ro = round(1 - total, 4)
+        r2o = f"{round(total, 4)}:{ro}"
+
+    sio2   = f(umf, 'SiO2')
+    al2o3  = f(umf, 'Al2O3')
+    sio2_al2o3 = round(sio2 / al2o3, 4) if sio2 and al2o3 else None
+
+    return jsonify({
+        'name':           recipe.get('name'),
+        'umf_na2o':       na2o,
+        'umf_k2o':        k2o,
+        'umf_cao':        f(umf, 'CaO'),
+        'umf_mgo':        f(umf, 'MgO'),
+        'umf_al2o3':      al2o3,
+        'umf_sio2':       sio2,
+        'umf_b2o3':       f(umf, 'B2O3'),
+        'umf_r2o_ro':     r2o,
+        'umf_sio2_al2o3': sio2_al2o3,
+    })
+
 # ─── INIT ─────────────────────────────────────────────────────────────────────
 
 def init_db():
@@ -316,13 +384,7 @@ def init_db():
             from seed_data import seed
             seed(db, Glaze, Ingredient, Material)
             print("Database seeded.")
-            
-@app.before_request
-def create_tables():
-    db.create_all()
-    if Glaze.query.count() == 0:
-        from seed_data import seed
-        seed(db, Glaze, Ingredient, Material)
 
 if __name__ == '__main__':
+    init_db()
     app.run(host='0.0.0.0', port=5000, debug=True)
