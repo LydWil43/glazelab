@@ -68,12 +68,20 @@ def index():
 def glazes():
     status_filter = request.args.get('status', '')
     tag_filter = request.args.get('tag', '')
+    category_filter = request.args.get('category', '')
     search = request.args.get('q', '')
     query = Glaze.query
     if status_filter:
         query = query.filter_by(status=status_filter)
     if tag_filter:
         query = query.filter(Glaze.tags.ilike(f'%{tag_filter}%'))
+    if category_filter:
+        query = query.filter(
+            db.or_(
+                Glaze.primary_category == category_filter,
+                Glaze.secondary_category == category_filter
+            )
+        )
     if search:
         query = query.filter(
             db.or_(
@@ -89,7 +97,8 @@ def glazes():
         if g.tags for t in g.tags.split(',') if t.strip()
     ))
     return render_template('glazes.html', glazes=all_glazes, status_filter=status_filter,
-                           tag_filter=tag_filter, search=search, all_tags=all_tags)
+                           tag_filter=tag_filter, category_filter=category_filter,
+                           search=search, all_tags=all_tags)
 
 @app.route('/glazes/<int:glaze_id>')
 def glaze_detail(glaze_id):
@@ -112,6 +121,8 @@ def new_glaze():
             lineage_notes=request.form.get('lineage_notes', ''),
             batch_date=request.form.get('batch_date', ''),
             tags=request.form.get('tags', ''),
+            primary_category=request.form.get('primary_category', '') or None,
+            secondary_category=request.form.get('secondary_category', '') or None,
             umf_expansion=float(request.form['umf_expansion']) if request.form.get('umf_expansion') else None,
             umf_r2o_ro=request.form.get('umf_r2o_ro', ''),
             umf_sio2_al2o3=float(request.form['umf_sio2_al2o3']) if request.form.get('umf_sio2_al2o3') else None,
@@ -162,6 +173,8 @@ def edit_glaze(glaze_id):
         glaze.lineage_notes = request.form.get('lineage_notes', '')
         glaze.batch_date = request.form.get('batch_date', '')
         glaze.tags = request.form.get('tags', '')
+        glaze.primary_category = request.form.get('primary_category', '') or None
+        glaze.secondary_category = request.form.get('secondary_category', '') or None
         glaze.umf_expansion = float(request.form['umf_expansion']) if request.form.get('umf_expansion') else None
         glaze.umf_r2o_ro = request.form.get('umf_r2o_ro', '')
         glaze.umf_sio2_al2o3 = float(request.form['umf_sio2_al2o3']) if request.form.get('umf_sio2_al2o3') else None
