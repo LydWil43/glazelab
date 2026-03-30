@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}{{ fire.name }}{% endblock %}
+{% block topbar_title %}<a href="{{ url_for('fires') }}" class="breadcrumb">Fires</a> / {{ fire.name }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('fire_sheet', fire_id=fire.id) }}" target="_blank" class="btn btn-ghost">Test Sheet JSON</a>
+  <a href="{{ url_for('edit_fire', fire_id=fire.id) }}" class="btn btn-ghost">Edit</a>
+{% endblock %}
+
+{% block content %}
+
+{# ── Fire header ── #}
+<div class="detail-panel" style="margin-bottom:16px;">
+  <div class="detail-header">
+    <div>
+      <div class="detail-name">{{ fire.name }}</div>
+      <div class="card-meta">
+        {% if fire.cone %}Cone {{ fire.cone }}{% endif %}
+        {% if fire.cone and fire.atmosphere %} · {% endif %}
+        {% if fire.atmosphere %}{{ fire.atmosphere.capitalize() }}{% endif %}
+      </div>
+    </div>
+    <span class="status-badge {{ fire.status }}">{{ fire.status }}</span>
+  </div>
+</div>
+
+{# ── Assigned tests ── #}
+<div class="detail-panel" style="margin-bottom:16px;">
+  <div style="padding:16px 24px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+    <div class="detail-section-label" style="margin:0;">Assigned Tests</div>
+    <span class="card-meta">{{ fire.tests|length }} test{{ 's' if fire.tests|length != 1 }}</span>
+  </div>
+  {% if fire.tests %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Glaze</th>
+        <th>Test</th>
+        <th>Type</th>
+        <th>Tiles</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for test in fire.tests %}
+      <tr>
+        <td>
+          <span style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay);">#{{ test.glaze.studio_number }}</span>
+          <span class="muted" style="font-size:12px; margin-left:6px;">{{ test.glaze.name }}</span>
+        </td>
+        <td><a href="{{ url_for('test_detail', test_id=test.id) }}" style="font-family:'Libre Baskerville',serif; font-size:13px; color:var(--text); text-decoration:none;">{{ test.name }}</a></td>
+        <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.test_type.replace('_',' ') if test.test_type else '—' }}</span></td>
+        <td><span style="font-family:'DM Mono',monospace; font-size:12px;">{{ test.tiles|length }}</span></td>
+        <td><span class="status-badge {{ test.status }}">{{ test.status }}</span></td>
+        <td>
+          <form action="{{ url_for('unassign_test', test_id=test.id) }}" method="post" style="display:inline;">
+            <button type="submit" class="table-link" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:11px;font-family:'DM Mono',monospace;">Remove</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:20px 24px;" class="muted">No tests assigned yet. Add from the pool below.</div>
+  {% endif %}
+</div>
+
+{# ── Unassigned pool ── #}
+{% if unassigned %}
+<div class="detail-panel">
+  <div style="padding:16px 24px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+    <div class="detail-section-label" style="margin:0;">Unassigned Pool</div>
+    <span class="card-meta">{{ unassigned|length }} available</span>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Glaze</th>
+        <th>Test</th>
+        <th>Type</th>
+        <th>Tags</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for test in unassigned %}
+      <tr>
+        <td>
+          <span style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay);">#{{ test.glaze.studio_number }}</span>
+          <span class="muted" style="font-size:12px; margin-left:6px;">{{ test.glaze.name }}</span>
+        </td>
+        <td style="font-family:'Libre Baskerville',serif; font-size:13px;">{{ test.name }}</td>
+        <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.test_type.replace('_',' ') if test.test_type else '—' }}</span></td>
+        <td>
+          {% if test.glaze.tags %}
+          {% for t in test.glaze.tags.split(',') %}
+          <span class="tag" style="background:var(--surface-2);color:var(--text-mid);font-size:10px;">{{ t.strip() }}</span>
+          {% endfor %}
+          {% endif %}
+        </td>
+        <td>
+          <form action="{{ url_for('assign_test', fire_id=fire.id) }}" method="post" style="display:inline;">
+            <input type="hidden" name="test_id" value="{{ test.id }}">
+            <button type="submit" class="btn btn-primary" style="font-size:11px; padding:4px 12px;">+ Add</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}
