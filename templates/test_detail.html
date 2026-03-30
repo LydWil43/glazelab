@@ -135,14 +135,37 @@
       </tbody>
     </table>
   </div>
+  {% elif test.progression_plan %}
+  {%- set plan = test.progression_plan | fromjson -%}
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          {% for h in plan.headers %}<th>{{ h }}</th>{% endfor %}
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in plan.rows %}
+        <tr>
+          {% for cell in row %}<td>{{ cell }}</td>{% endfor %}
+          <td><span class="muted" style="font-size:12px;">Pending</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if plan.note %}
+  <div style="padding:12px 24px 16px;">
+    <span class="muted" style="font-size:12px;">{{ plan.note }}</span>
+  </div>
+  {% endif %}
+  <div style="padding:0 24px 20px;">
+    <a href="{{ url_for('new_tile', test_id=test.id) }}" class="btn btn-ghost" style="font-size:12px;">+ Log first tile</a>
+  </div>
   {% else %}
-  <div style="padding:20px 24px;">
-    {% if test.description %}
-    <div class="notes-box" style="margin-bottom:16px; white-space:pre-wrap;">{{ test.description }}</div>
-    {% endif %}
-    <div class="empty-state" style="padding:16px 0 0;">
-      No tiles logged yet. <a href="{{ url_for('new_tile', test_id=test.id) }}">Log the first tile.</a>
-    </div>
+  <div class="empty-state">
+    No tiles logged yet. <a href="{{ url_for('new_tile', test_id=test.id) }}">Log the first tile.</a>
   </div>
   {% endif %}
 </div>
