@@ -36,6 +36,26 @@
       </div>
       <div class="form-row">
         <div class="form-group">
+          <label>Primary Category *</label>
+          <select name="primary_category" required>
+            <option value="">— select —</option>
+            {% for cat in ['liner','slip','ash','shino','tenmoku','celadon','matte','crystal-macro','crystal-micro','glaze'] %}
+            <option value="{{ cat }}" {% if glaze and glaze.primary_category==cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Secondary Category</label>
+          <select name="secondary_category">
+            <option value="">—</option>
+            {% for cat in ['liner','slip','ash','shino','tenmoku','celadon','matte','crystal-macro','crystal-micro','glaze'] %}
+            <option value="{{ cat }}" {% if glaze and glaze.secondary_category==cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
           <label>Status</label>
           <select name="status">
             <option value="production" {% if glaze and glaze.status=='production' %}selected{% endif %}>Production</option>
