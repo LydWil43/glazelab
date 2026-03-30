@@ -329,6 +329,12 @@ def edit_material(material_id):
         return redirect(url_for('materials'))
     return render_template('material_form.html', material=material)
 
+@app.route('/tests/print')
+def print_tests():
+    all_tests = GlazeTest.query.order_by(GlazeTest.glaze_id, GlazeTest.id).all()
+    now = datetime.utcnow().strftime('%B %d, %Y')
+    return render_template('tests_print.html', tests=all_tests, now=now)
+
 # ─── API ─────────────────────────────────────────────────────────────────────
 
 @app.route('/api/glazes')
