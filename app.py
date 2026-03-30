@@ -248,8 +248,9 @@ def new_test():
             glaze_id=int(request.form['glaze_id']),
             name=request.form['name'],
             description=request.form.get('description', ''),
-            test_type=request.form.get('test_type', 'wet_progression'),
+            test_type=request.form.get('test_type', 'progression_blend'),
             base_batch_size=float(request.form['base_batch_size']) if request.form.get('base_batch_size') else 100,
+            excluded_ingredients=request.form.get('excluded_ingredients', '[]'),
             status='planned'
         )
         db.session.add(test)
