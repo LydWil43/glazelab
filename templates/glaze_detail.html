@@ -38,9 +38,9 @@
         {% endfor %}
       </table>
 
-      {% if glaze.cone or glaze.atmosphere %}
+      {% if glaze.cone or glaze.atmosphere or glaze.tags %}
       <div style="margin-top:20px;">
-        <div class="detail-section-label">Firing</div>
+        <div class="detail-section-label">Firing & Tags</div>
         <div class="firing-tags">
           {% if glaze.cone %}<span class="tag tag-cone10">{{ glaze.cone }}</span>{% endif %}
           {% if glaze.atmosphere %}
@@ -49,6 +49,11 @@
             {% endfor %}
           {% endif %}
           {% if glaze.surface %}<span class="tag tag-cone10">{{ glaze.surface }}</span>{% endif %}
+          {% if glaze.tags %}
+            {% for t in glaze.tags.split(',') %}
+              <a class="tag" href="{{ url_for('glazes', tag=t.strip()) }}" style="background:var(--clay-pale);color:var(--clay);text-decoration:none;">{{ t.strip() }}</a>
+            {% endfor %}
+          {% endif %}
         </div>
       </div>
       {% endif %}
