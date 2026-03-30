@@ -7,24 +7,34 @@
 
 {% block content %}
 {% if tests %}
-<div class="test-grid">
-{% for test in tests %}
-<a class="test-card" href="{{ url_for('test_detail', test_id=test.id) }}">
-  <div class="test-card-header">
-    <div>
-      <div class="test-card-glaze">#{{ test.glaze.studio_number }} {{ test.glaze.name }}</div>
-      <div class="test-card-name">{{ test.name }}</div>
-    </div>
-    <span class="status-badge {{ test.status }}">{{ test.status }}</span>
-  </div>
-  <div class="test-card-meta">
-    {{ test.tiles|length }} tiles · {{ test.test_type.replace('_',' ') }} · {{ test.base_batch_size }}g base
-  </div>
-  {% if test.description %}
-  <div class="test-card-desc">{{ test.description[:120] }}{% if test.description|length > 120 %}…{% endif %}</div>
-  {% endif %}
-</a>
-{% endfor %}
+<div class="detail-panel">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Glaze</th>
+        <th>Test Name</th>
+        <th>Type</th>
+        <th>Base</th>
+        <th>Tiles</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for test in tests %}
+      <tr style="cursor:pointer;" onclick="window.location='{{ url_for('test_detail', test_id=test.id) }}'">
+        <td>
+          <span style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay);">#{{ test.glaze.studio_number }}</span>
+          <span class="muted" style="font-size:12px; margin-left:6px;">{{ test.glaze.name }}</span>
+        </td>
+        <td style="font-family:'Libre Baskerville',serif; font-size:13px;">{{ test.name }}</td>
+        <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.test_type.replace('_',' ') }}</span></td>
+        <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.base_batch_size }}g</span></td>
+        <td><span style="font-family:'DM Mono',monospace; font-size:12px;">{{ test.tiles|length }}</span></td>
+        <td><span class="status-badge {{ test.status }}">{{ test.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% else %}
 <div class="empty-state">No tests yet. <a href="{{ url_for('new_test') }}">Create one.</a></div>
