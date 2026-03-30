@@ -196,6 +196,18 @@ def delete_glaze(glaze_id):
     flash('Glaze deleted.', 'success')
     return redirect(url_for('glazes'))
 
+@app.route('/glazes/<int:glaze_id>/note', methods=['POST'])
+def add_glaze_note(glaze_id):
+    glaze = Glaze.query.get_or_404(glaze_id)
+    text = request.json.get('text', '').strip()
+    if not text:
+        return jsonify({'error': 'empty'}), 400
+    date_str = datetime.utcnow().strftime('%B %d, %Y')
+    new_entry = f"[{date_str}] {text}"
+    glaze.notes = (new_entry + '\n\n' + glaze.notes) if glaze.notes else new_entry
+    db.session.commit()
+    return jsonify({'notes': glaze.notes})
+
 # ─── TESTS ───────────────────────────────────────────────────────────────────
 
 @app.route('/tests')
