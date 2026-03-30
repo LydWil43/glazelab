@@ -33,6 +33,9 @@
       <a class="nav-item {% if request.endpoint in ['tests','test_detail','new_test'] %}active{% endif %}" href="{{ url_for('tests') }}">
         <span class="icon">🧪</span> Test Series
       </a>
+      <a class="nav-item {% if request.endpoint in ['fires','fire_detail','new_fire','edit_fire'] %}active{% endif %}" href="{{ url_for('fires') }}">
+        <span class="icon">🔥</span> Fires
+      </a>
       <div class="nav-section-label">Studio</div>
       <a class="nav-item {% if request.endpoint in ['materials','new_material','edit_material'] %}active{% endif %}" href="{{ url_for('materials') }}">
         <span class="icon">📦</span> Materials
