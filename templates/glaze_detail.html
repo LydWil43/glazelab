@@ -38,10 +38,16 @@
         {% endfor %}
       </table>
 
-      {% if glaze.cone or glaze.atmosphere or glaze.tags %}
+      {% if glaze.cone or glaze.atmosphere or glaze.tags or glaze.primary_category %}
       <div style="margin-top:20px;">
         <div class="detail-section-label">Firing & Tags</div>
         <div class="firing-tags">
+          {% if glaze.primary_category %}
+            <a class="tag" href="{{ url_for('glazes', category=glaze.primary_category) }}" style="background:var(--clay);color:#fff;text-decoration:none;">{{ glaze.primary_category }}</a>
+          {% endif %}
+          {% if glaze.secondary_category %}
+            <a class="tag" href="{{ url_for('glazes', category=glaze.secondary_category) }}" style="background:var(--clay-pale);color:var(--clay);text-decoration:none;">{{ glaze.secondary_category }}</a>
+          {% endif %}
           {% if glaze.cone %}<span class="tag tag-cone10">{{ glaze.cone }}</span>{% endif %}
           {% if glaze.atmosphere %}
             {% for atm in glaze.atmosphere.split(',') %}
