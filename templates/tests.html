@@ -7,6 +7,12 @@
 {% endblock %}
 
 {% block content %}
+{% if unassigned_count %}
+<div style="margin-bottom:12px; padding:10px 16px; background:var(--surface-2); border-radius:8px; font-size:12px; color:var(--text-mid); display:flex; align-items:center; justify-content:space-between;">
+  <span><span style="font-family:'DM Mono',monospace; color:var(--clay);">{{ unassigned_count }}</span> test{{ 's' if unassigned_count != 1 }} not assigned to a fire</span>
+  <a href="{{ url_for('fires') }}" style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay);">Manage Fires →</a>
+</div>
+{% endif %}
 {% if tests %}
 <div class="detail-panel">
   <table class="data-table">
@@ -17,6 +23,7 @@
         <th>Type</th>
         <th>Base</th>
         <th>Tiles</th>
+        <th>Fire</th>
         <th>Status</th>
       </tr>
     </thead>
@@ -31,6 +38,14 @@
         <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.test_type.replace('_',' ') }}</span></td>
         <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.base_batch_size }}g</span></td>
         <td><span style="font-family:'DM Mono',monospace; font-size:12px;">{{ test.tiles|length }}</span></td>
+        <td>
+          {% if test.fire %}
+          <a href="{{ url_for('fire_detail', fire_id=test.fire.id) }}" onclick="event.stopPropagation();"
+             style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay); text-decoration:none;">{{ test.fire.name }}</a>
+          {% else %}
+          <span class="muted" style="font-size:11px;">—</span>
+          {% endif %}
+        </td>
         <td><span class="status-badge {{ test.status }}">{{ test.status }}</span></td>
       </tr>
       {% endfor %}
