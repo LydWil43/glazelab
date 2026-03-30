@@ -9,7 +9,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, f
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from datetime import datetime
-from models import db, Glaze, Ingredient, Material, GlazeTest, Tile, FiringLog
+from models import db, Glaze, Ingredient, Material, GlazeTest, Tile, FiringLog, Fire
 
 app = Flask(__name__)
 
@@ -224,7 +224,8 @@ def add_glaze_note(glaze_id):
 @app.route('/tests')
 def tests():
     all_tests = GlazeTest.query.order_by(GlazeTest.created_at.desc()).all()
-    return render_template('tests.html', tests=all_tests)
+    unassigned_count = GlazeTest.query.filter_by(fire_id=None).count()
+    return render_template('tests.html', tests=all_tests, unassigned_count=unassigned_count)
 
 @app.route('/tests/new', methods=['GET', 'POST'])
 def new_test():
@@ -362,6 +363,104 @@ def print_tests():
     now = datetime.utcnow().strftime('%B %d, %Y')
     return render_template('tests_print.html', tests=all_tests, now=now,
                            all_tags=all_tags, tag_filter=tag_filter)
+
+# ─── FIRES ───────────────────────────────────────────────────────────────────
+
+@app.route('/fires')
+def fires():
+    all_fires = Fire.query.order_by(Fire.created_at.desc()).all()
+    return render_template('fires.html', fires=all_fires)
+
+@app.route('/fires/new', methods=['GET', 'POST'])
+def new_fire():
+    if request.method == 'POST':
+        fire = Fire(
+            name=request.form['name'],
+            cone=request.form.get('cone', ''),
+            atmosphere=request.form.get('atmosphere', ''),
+            status=request.form.get('status', 'planning'),
+        )
+        db.session.add(fire)
+        db.session.commit()
+        return redirect(url_for('fire_detail', fire_id=fire.id))
+    return render_template('fire_form.html', fire=None)
+
+@app.route('/fires/<int:fire_id>')
+def fire_detail(fire_id):
+    fire = Fire.query.get_or_404(fire_id)
+    unassigned = GlazeTest.query.filter_by(fire_id=None).order_by(GlazeTest.id).all()
+    return render_template('fire_detail.html', fire=fire, unassigned=unassigned)
+
+@app.route('/fires/<int:fire_id>/edit', methods=['GET', 'POST'])
+def edit_fire(fire_id):
+    fire = Fire.query.get_or_404(fire_id)
+    if request.method == 'POST':
+        fire.name = request.form['name']
+        fire.cone = request.form.get('cone', '')
+        fire.atmosphere = request.form.get('atmosphere', '')
+        fire.status = request.form.get('status', 'planning')
+        db.session.commit()
+        return redirect(url_for('fire_detail', fire_id=fire.id))
+    return render_template('fire_form.html', fire=fire)
+
+@app.route('/fires/<int:fire_id>/assign', methods=['POST'])
+def assign_test(fire_id):
+    fire = Fire.query.get_or_404(fire_id)
+    test_id = request.form.get('test_id')
+    test = GlazeTest.query.get_or_404(test_id)
+    test.fire_id = fire.id
+    db.session.commit()
+    return redirect(url_for('fire_detail', fire_id=fire.id))
+
+@app.route('/tests/<int:test_id>/unassign', methods=['POST'])
+def unassign_test(test_id):
+    test = GlazeTest.query.get_or_404(test_id)
+    fire_id = test.fire_id
+    test.fire_id = None
+    db.session.commit()
+    return redirect(url_for('fire_detail', fire_id=fire_id) if fire_id else url_for('tests'))
+
+@app.route('/fires/<int:fire_id>/delete', methods=['POST'])
+def delete_fire(fire_id):
+    fire = Fire.query.get_or_404(fire_id)
+    for test in fire.tests:
+        test.fire_id = None
+    db.session.delete(fire)
+    db.session.commit()
+    return redirect(url_for('fires'))
+
+@app.route('/fires/<int:fire_id>/sheet.json')
+def fire_sheet(fire_id):
+    fire = Fire.query.get_or_404(fire_id)
+    tests_data = []
+    for test in fire.tests:
+        base = [{'material': i.material, 'amount': i.amount}
+                for i in test.glaze.ingredients if not i.is_additive]
+        additives = [{'material': i.material, 'amount': i.amount}
+                     for i in test.glaze.ingredients if i.is_additive]
+        progression = None
+        if test.tiles:
+            progression = {
+                'headers': ['Tile', 'Additions', 'Atmosphere', 'Result'],
+                'rows': [[t.tile_number, t.additions or '—',
+                          t.atmosphere or '—', t.result_notes or ''] for t in test.tiles]
+            }
+        elif test.progression_plan:
+            progression = _json.loads(test.progression_plan)
+        tests_data.append({
+            'glaze': {'studio_number': test.glaze.studio_number,
+                      'name': test.glaze.name, 'tags': test.glaze.tags},
+            'test': {'name': test.name, 'type': test.test_type,
+                     'base_batch_size': test.base_batch_size, 'status': test.status},
+            'recipe': {'base': base, 'additives': additives},
+            'progression': progression,
+        })
+    return jsonify({
+        'fire': {'name': fire.name, 'cone': fire.cone,
+                 'atmosphere': fire.atmosphere, 'status': fire.status,
+                 'date': fire.created_at.strftime('%B %d, %Y')},
+        'tests': tests_data
+    })
 
 # ─── API ─────────────────────────────────────────────────────────────────────
 
