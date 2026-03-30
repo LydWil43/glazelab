@@ -2,6 +2,7 @@
 {% block title %}Tests{% endblock %}
 {% block topbar_title %}Test Series{% endblock %}
 {% block topbar_actions %}
+  <a href="{{ url_for('print_tests') }}" target="_blank" class="btn btn-ghost">Print</a>
   <a href="{{ url_for('new_test') }}" class="btn btn-primary">+ New Test</a>
 {% endblock %}
 
