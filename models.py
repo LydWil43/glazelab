@@ -89,10 +89,23 @@ class Material(db.Model):
         }
 
 
+class Fire(db.Model):
+    __tablename__ = 'fires'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    cone = db.Column(db.String(50))
+    atmosphere = db.Column(db.String(100))  # reduction, oxidation, neutral, wood
+    status = db.Column(db.String(50), default='planning')  # planning, fired, archived
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    tests = db.relationship('GlazeTest', backref='fire', lazy=True)
+
+
 class GlazeTest(db.Model):
     __tablename__ = 'glaze_tests'
     id = db.Column(db.Integer, primary_key=True)
     glaze_id = db.Column(db.Integer, db.ForeignKey('glazes.id'), nullable=False)
+    fire_id = db.Column(db.Integer, db.ForeignKey('fires.id'), nullable=True)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     test_type = db.Column(db.String(50))  # wet_progression, discrete_batch
