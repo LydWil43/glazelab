@@ -301,6 +301,60 @@ def test_detail(test_id):
     test = GlazeTest.query.get_or_404(test_id)
     return render_template('test_detail.html', test=test)
 
+@app.route('/tests/<int:test_id>/edit', methods=['GET', 'POST'])
+def edit_test(test_id):
+    test = GlazeTest.query.get_or_404(test_id)
+    glazes = Glaze.query.order_by(Glaze.studio_number).all()
+    fires = Fire.query.filter(Fire.status != 'archived').order_by(Fire.created_at.desc()).all()
+    if request.method == 'POST':
+        glaze = Glaze.query.get_or_404(int(request.form['glaze_id']))
+        test_type = request.form.get('test_type', 'progression_blend')
+        type_label = 'Progression Blend' if test_type == 'progression_blend' else 'Discrete Batch'
+
+        base_materials = request.form.getlist('base_material')
+        base_amounts = request.form.getlist('base_amount')
+        base = [{'material': m, 'amount': float(a)} for m, a in zip(base_materials, base_amounts) if m and a]
+
+        var_materials = request.form.getlist('var_material')
+        var_step_sizes = request.form.getlist('var_step_size')
+        var_step_counts = request.form.getlist('var_step_count')
+
+        # Preserve existing photo_urls when rebuilding steps
+        existing_vars = _json.loads(test.variables) if test.variables else []
+        existing_photos = {}
+        for vi, var in enumerate(existing_vars):
+            for si, step in enumerate(var.get('steps', [])):
+                existing_photos[(vi, si)] = step.get('photo_url')
+
+        variables = []
+        for vi, (material, step_size_str, step_count_str) in enumerate(zip(var_materials, var_step_sizes, var_step_counts)):
+            if not material:
+                continue
+            step_size = float(step_size_str) if step_size_str else 1.0
+            step_count = int(step_count_str) if step_count_str else 5
+            cumulative = 0.0
+            steps = []
+            for i in range(step_count):
+                increment = 0.0 if i == 0 else step_size
+                cumulative = round(cumulative + increment, 4)
+                steps.append({'step_number': i + 1, 'increment': increment,
+                               'cumulative_total': cumulative,
+                               'photo_url': existing_photos.get((vi, i))})
+            variables.append({'material': material, 'step_size': step_size, 'steps': steps})
+
+        fire_id_str = request.form.get('fire_id', '')
+        test.glaze_id = glaze.id
+        test.fire_id = int(fire_id_str) if fire_id_str else None
+        test.name = f"#{glaze.studio_number} {glaze.name} — {type_label}"
+        test.test_type = test_type
+        test.base_batch_size = float(request.form['base_batch_size']) if request.form.get('base_batch_size') else 100
+        test.recipe = _json.dumps({'base': base})
+        test.variables = _json.dumps(variables)
+        db.session.commit()
+        flash('Test updated.', 'success')
+        return redirect(url_for('test_detail', test_id=test.id))
+    return render_template('test_form.html', test=test, glazes=glazes, fires=fires)
+
 @app.route('/tests/<int:test_id>/delete', methods=['POST'])
 def delete_test(test_id):
     test = GlazeTest.query.get_or_404(test_id)
