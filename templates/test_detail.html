@@ -24,7 +24,7 @@
         {% set _vars = test.variables | fromjson %}
         {% set _type_label = 'Progression Blend' if test.test_type == 'progression_blend' else 'Discrete Batch' %}
         <div class="detail-name">#{{ test.glaze.studio_number }} — {{ _vars[0].material if _vars else '' }} {{ _type_label }}</div>
-        <div class="card-meta">{{ test.glaze.name }} · {{ test.base_batch_size }}g{% if test.fire %} · <a href="{{ url_for('fire_detail', fire_id=test.fire.id) }}" style="color:var(--clay); text-decoration:none;">{{ test.fire.name }}</a>{% endif %}</div>
+        <div class="card-meta"><a href="{{ url_for('glaze_detail', glaze_id=test.glaze.id) }}" style="color:var(--clay); text-decoration:none;">{{ test.glaze.name }}</a> · {{ test.base_batch_size }}g{% if test.fire %} · <a href="{{ url_for('fire_detail', fire_id=test.fire.id) }}" style="color:var(--clay); text-decoration:none;">{{ test.fire.name }}</a>{% endif %}</div>
       {% else %}
         <div class="detail-num"><a href="{{ url_for('glaze_detail', glaze_id=test.glaze.id) }}">#{{ test.glaze.studio_number }} {{ test.glaze.name }}</a></div>
         <div class="card-meta">{{ test.test_type.replace('_',' ') if test.test_type else '' }} · {{ test.base_batch_size }}g base</div>
@@ -61,7 +61,7 @@
 {% if recipe.base %}
 <div class="detail-panel" style="margin-bottom:16px;">
   <div style="padding:12px 20px; border-bottom:1px solid var(--border);">
-    <div class="detail-section-label" style="margin:0;">Base Recipe · {{ test.base_batch_size }}g</div>
+    <div class="detail-section-label" style="margin:0;">Base Additions · {{ test.base_batch_size }}g</div>
   </div>
   <div style="padding:12px 20px;">
     <table class="recipe-table">
@@ -134,7 +134,7 @@
 <div class="detail-panel" style="margin-bottom:16px;">
   <div class="detail-body">
     <div class="detail-col">
-      <div class="detail-section-label">Base Recipe</div>
+      <div class="detail-section-label">Base Additions</div>
       {% set base_ings = test.glaze.ingredients | rejectattr('is_additive') | list %}
       {% set add_ings  = test.glaze.ingredients | selectattr('is_additive') | list %}
       {% if base_ings or add_ings %}
