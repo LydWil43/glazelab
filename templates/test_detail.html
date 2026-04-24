@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}{{ test.glaze.name }} Test{% endblock %}
-{% block topbar_title %}<a href="{{ url_for('tests') }}" class="breadcrumb">Tests</a> / #{{ test.glaze.studio_number }} {{ test.glaze.name }}{% endblock %}
+{% block topbar_title %}<a href="{{ url_for('tests') }}" class="breadcrumb">Tests</a> / #{{ test.glaze.studio_number }}{% endblock %}
 {% block topbar_actions %}
   {% if test.status == 'resolved' %}
   <a href="{{ url_for('glaze_detail', glaze_id=test.glaze.id) }}" class="btn btn-ghost">View Glaze →</a>
@@ -20,13 +20,15 @@
 <div class="detail-panel" style="margin-bottom:16px;">
   <div class="detail-header">
     <div>
-      <div class="detail-num">
-        <a href="{{ url_for('glaze_detail', glaze_id=test.glaze.id) }}">#{{ test.glaze.studio_number }} {{ test.glaze.name }}</a>
-      </div>
-      <div class="card-meta">
-        {{ test.test_type.replace('_',' ') }} · {{ test.base_batch_size }}g base
-        {% if test.fire %} · <a href="{{ url_for('fire_detail', fire_id=test.fire.id) }}" style="color:var(--clay); text-decoration:none;">{{ test.fire.name }}</a>{% endif %}
-      </div>
+      {% if test.variables %}
+        {% set _vars = test.variables | fromjson %}
+        {% set _type_label = 'Progression Blend' if test.test_type == 'progression_blend' else 'Discrete Batch' %}
+        <div class="detail-name">#{{ test.glaze.studio_number }} — {{ _vars[0].material if _vars else '' }} {{ _type_label }}</div>
+        <div class="card-meta">{{ test.glaze.name }} · {{ test.base_batch_size }}g{% if test.fire %} · <a href="{{ url_for('fire_detail', fire_id=test.fire.id) }}" style="color:var(--clay); text-decoration:none;">{{ test.fire.name }}</a>{% endif %}</div>
+      {% else %}
+        <div class="detail-num"><a href="{{ url_for('glaze_detail', glaze_id=test.glaze.id) }}">#{{ test.glaze.studio_number }} {{ test.glaze.name }}</a></div>
+        <div class="card-meta">{{ test.test_type.replace('_',' ') if test.test_type else '' }} · {{ test.base_batch_size }}g base</div>
+      {% endif %}
     </div>
     <span class="status-badge {{ test.status }}">{{ test.status }}</span>
   </div>
