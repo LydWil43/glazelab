@@ -93,7 +93,7 @@ def glazes():
                 Glaze.ingredients.any(Ingredient.material.ilike(f'%{search}%'))
             )
         )
-    all_glazes = sorted(query.all(), key=lambda g: int(g.studio_number) if g.studio_number and g.studio_number.isdigit() else 0, reverse=True)
+    all_glazes = query.order_by(Glaze.studio_number).all()
     # Collect all unique tags for filter chips
     all_tags = sorted(set(
         t.strip() for g in Glaze.query.all()
@@ -693,15 +693,14 @@ def _run_migrations():
         "ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS recipe TEXT",
         "ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS variables TEXT",
         "ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS note TEXT",
-        "ALTER TABLE glazes ADD COLUMN IF NOT EXISTS pinned BOOLEAN DEFAULT FALSE",
     ]
-    for sql in migrations:
-        try:
-            with db.engine.connect() as conn:
+    try:
+        with db.engine.connect() as conn:
+            for sql in migrations:
                 conn.execute(text(sql))
-                conn.commit()
-        except Exception:
-            pass
+            conn.commit()
+    except Exception:
+        pass
 
 # Run migrations on startup so gunicorn picks them up too
 with app.app_context():
