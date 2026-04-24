@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
-{% block title %}Fires{% endblock %}
-{% block topbar_title %}Fires{% endblock %}
+{% block title %}Firings{% endblock %}
+{% block topbar_title %}Firings{% endblock %}
 {% block topbar_actions %}
-  <a href="{{ url_for('new_fire') }}" class="btn btn-primary">+ New Fire</a>
+  <a href="{{ url_for('new_fire') }}" class="btn btn-primary">+ New Firing</a>
 {% endblock %}
 
 {% block content %}
@@ -16,6 +16,7 @@
         <th>Atmosphere</th>
         <th>Tests</th>
         <th>Status</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -26,12 +27,17 @@
         <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:11px;">{{ fire.atmosphere or '—' }}</span></td>
         <td><span style="font-family:'DM Mono',monospace; font-size:12px;">{{ fire.tests|length }}</span></td>
         <td><span class="status-badge {{ fire.status }}">{{ fire.status }}</span></td>
+        <td onclick="event.stopPropagation();">
+          <form action="{{ url_for('delete_fire', fire_id=fire.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Delete this firing? Tests will be unassigned.')">
+            <button type="submit" class="btn btn-danger" style="font-size:11px; padding:4px 10px;">Delete</button>
+          </form>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 {% else %}
-<div class="empty-state">No fires yet. <a href="{{ url_for('new_fire') }}">Create one.</a></div>
+<div class="empty-state">No firings yet. <a href="{{ url_for('new_fire') }}">Create one.</a></div>
 {% endif %}
 {% endblock %}
