@@ -235,15 +235,15 @@
         {% set pvars = test.variables | fromjson %}
         {% for var in pvars %}
         <div style="margin-bottom:10px;">
-          <div class="section-label">{{ var.material }}</div>
+          <div class="section-label"><strong>{{ var.material }}</strong></div>
           <table>
-            <thead><tr><th>#</th><th>Add</th><th>Total</th></tr></thead>
+            <thead><tr><th>#</th><th><strong>+{{ var.material }}</strong></th><th><strong>Total</strong></th></tr></thead>
             <tbody>
             {% for step in var.steps %}
             <tr>
               <td class="mono">{{ step.step_number }}</td>
-              <td class="mono">+{{ step.increment }}g</td>
-              <td class="mono">{{ step.cumulative_total }}g</td>
+              <td class="mono"><strong>+{{ step.increment }}g</strong></td>
+              <td class="mono"><strong>{{ step.cumulative_total }}g</strong></td>
             </tr>
             {% endfor %}
             </tbody>
