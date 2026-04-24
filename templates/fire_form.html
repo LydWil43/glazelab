@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
-{% block title %}{{ 'Edit Fire' if fire else 'New Fire' }}{% endblock %}
+{% block title %}{{ 'Edit Firing' if fire else 'New Firing' }}{% endblock %}
 {% block topbar_title %}
-  <a href="{{ url_for('fires') }}" class="breadcrumb">Fires</a> / {{ 'Edit' if fire else 'New Fire' }}
+  <a href="{{ url_for('fires') }}" class="breadcrumb">Firings</a> / {{ 'Edit' if fire else 'New Firing' }}
 {% endblock %}
 
 {% block content %}
@@ -36,10 +36,10 @@
         </select>
       </div>
       <div style="display:flex; gap:10px; margin-top:24px;">
-        <button type="submit" class="btn btn-primary">{{ 'Save' if fire else 'Create Fire' }}</button>
+        <button type="submit" class="btn btn-primary">{{ 'Save' if fire else 'Create Firing' }}</button>
         <a href="{{ url_for('fire_detail', fire_id=fire.id) if fire else url_for('fires') }}" class="btn btn-ghost">Cancel</a>
         {% if fire %}
-        <form action="{{ url_for('delete_fire', fire_id=fire.id) }}" method="post" style="margin-left:auto;" onsubmit="return confirm('Delete this fire? Tests will be unassigned.')">
+        <form action="{{ url_for('delete_fire', fire_id=fire.id) }}" method="post" style="margin-left:auto;" onsubmit="return confirm('Delete this firing? Tests will be unassigned.')">
           <button type="submit" class="btn btn-danger">Delete</button>
         </form>
         {% endif %}
