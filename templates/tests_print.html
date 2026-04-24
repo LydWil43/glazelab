@@ -167,34 +167,34 @@
 
   <div class="two-col">
 
-    {# Base Recipe — use snapshot if available, else fall back to live glaze recipe #}
+    {# Base Recipe — use snapshot if it has items, else fall back to live glaze recipe #}
     <div>
       <div class="section-label">Base Recipe</div>
+      {% set snap_base = [] %}
       {% if test.recipe %}
         {% set snap = test.recipe | fromjson %}
-        {% if snap.base %}
+        {% if snap.base %}{% set snap_base = snap.base %}{% endif %}
+      {% endif %}
+      {% if snap_base %}
         <table>
-          {% for ing in snap.base %}
+          {% for ing in snap_base %}
           <tr><td>{{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
           {% endfor %}
         </table>
-        {% else %}
-        <span style="color:var(--text-muted); font-size:11px;">No recipe on file.</span>
-        {% endif %}
       {% else %}
-        {% set base_ings = test.glaze.ingredients | rejectattr('is_additive') | list %}
-        {% set add_ings  = test.glaze.ingredients | selectattr('is_additive') | list %}
-        {% if base_ings or add_ings %}
+        {% set ings = test.glaze.ingredients %}
+        {% if ings %}
         <table>
-          {% for ing in base_ings %}
+          {% for ing in ings %}
+          {% if not ing.is_additive %}
           <tr><td>{{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
-          {% endfor %}
-          {% if add_ings %}
-          <tr><td colspan="2" style="padding-top:6px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted);">Additives</td></tr>
-          {% for ing in add_ings %}
-          <tr class="additive"><td>+ {{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
-          {% endfor %}
           {% endif %}
+          {% endfor %}
+          {% for ing in ings %}
+          {% if ing.is_additive %}
+          <tr class="additive"><td>+ {{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
+          {% endif %}
+          {% endfor %}
         </table>
         {% else %}
         <span style="color:var(--text-muted); font-size:11px;">No recipe on file.</span>
