@@ -9,8 +9,8 @@
 {% block content %}
 {% if unassigned_count %}
 <div style="margin-bottom:12px; padding:10px 16px; background:var(--surface-2); border-radius:8px; font-size:12px; color:var(--text-mid); display:flex; align-items:center; justify-content:space-between;">
-  <span><span style="font-family:'DM Mono',monospace; color:var(--clay);">{{ unassigned_count }}</span> test{{ 's' if unassigned_count != 1 }} not assigned to a fire</span>
-  <a href="{{ url_for('fires') }}" style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay);">Manage Fires →</a>
+  <span><span style="font-family:'DM Mono',monospace; color:var(--clay);">{{ unassigned_count }}</span> test{{ 's' if unassigned_count != 1 }} not assigned to a firing</span>
+  <a href="{{ url_for('fires') }}" style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay);">Manage Firings →</a>
 </div>
 {% endif %}
 {% if tests %}
@@ -18,28 +18,36 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>Glaze</th>
-        <th>Test Name</th>
+        <th>Test</th>
         <th>Type</th>
         <th>Base</th>
         <th>Progress</th>
-        <th>Fire</th>
+        <th>Firing</th>
         <th>Status</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
       {% for test in tests %}
+      {% if test.variables %}
+        {% set pvars = test.variables | fromjson %}
+        {% set type_label = 'Progression Blend' if test.test_type == 'progression_blend' else 'Discrete Batch' %}
+        {% set first_var = pvars[0].material if pvars else '' %}
+      {% endif %}
       <tr style="cursor:pointer;" onclick="window.location='{{ url_for('test_detail', test_id=test.id) }}'">
         <td>
-          <span style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay);">#{{ test.glaze.studio_number }}</span>
-          <span class="muted" style="font-size:12px; margin-left:6px;">{{ test.glaze.name }}</span>
+          {% if test.variables %}
+          <div style="font-family:'Libre Baskerville',serif; font-size:13px;">#{{ test.glaze.studio_number }} — {{ first_var }} {{ type_label }}</div>
+          <div style="font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:2px;">{{ test.glaze.name }} · {{ test.base_batch_size }}g</div>
+          {% else %}
+          <div style="font-family:'Libre Baskerville',serif; font-size:13px;">{{ test.name }}</div>
+          <div style="font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:2px;">#{{ test.glaze.studio_number }} {{ test.glaze.name }}</div>
+          {% endif %}
         </td>
-        <td style="font-family:'Libre Baskerville',serif; font-size:13px;">{{ test.name }}</td>
-        <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.test_type.replace('_',' ') }}</span></td>
+        <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.test_type.replace('_',' ') if test.test_type else '—' }}</span></td>
         <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.base_batch_size }}g</span></td>
         <td>
           {% if test.variables %}
-            {% set pvars = test.variables | fromjson %}
             {% set pns = namespace(total=0, uploaded=0) %}
             {% for pvar in pvars %}{% for pstep in pvar.steps %}
               {% set pns.total = pns.total + 1 %}
@@ -59,6 +67,12 @@
           {% endif %}
         </td>
         <td><span class="status-badge {{ test.status }}">{{ test.status }}</span></td>
+        <td onclick="event.stopPropagation();" style="white-space:nowrap;">
+          <a href="{{ url_for('edit_test', test_id=test.id) }}" class="btn btn-ghost" style="font-size:11px; padding:4px 10px;">Edit</a>
+          <form action="{{ url_for('delete_test', test_id=test.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Delete this test?')">
+            <button type="submit" class="btn btn-danger" style="font-size:11px; padding:4px 10px;">Delete</button>
+          </form>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
