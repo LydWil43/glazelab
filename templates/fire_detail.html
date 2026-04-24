@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}{{ fire.name }}{% endblock %}
-{% block topbar_title %}<a href="{{ url_for('fires') }}" class="breadcrumb">Fires</a> / {{ fire.name }}{% endblock %}
+{% block topbar_title %}<a href="{{ url_for('fires') }}" class="breadcrumb">Firings</a> / {{ fire.name }}{% endblock %}
 {% block topbar_actions %}
   <a href="{{ url_for('fire_sheet', fire_id=fire.id) }}" target="_blank" class="btn btn-ghost">Test Sheet JSON</a>
   <a href="{{ url_for('edit_fire', fire_id=fire.id) }}" class="btn btn-ghost">Edit</a>
