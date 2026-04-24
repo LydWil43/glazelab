@@ -14,8 +14,11 @@
     <div class="sidebar-brand">
       <h1>Bird Creek <em>Studios</em></h1>
       <div class="sub">Glaze Lab</div>
+      <button class="nav-hamburger" id="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
     </div>
-    <nav class="sidebar-nav">
+    <nav class="sidebar-nav" id="sidebar-nav">
       <div class="nav-section-label">Library</div>
       <a class="nav-item {% if request.endpoint in ['index','glazes','glaze_detail'] %}active{% endif %}" href="{{ url_for('glazes') }}">
         All Glazes
@@ -64,6 +67,14 @@
   </div>
 </div>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+function toggleNav() {
+  const nav = document.getElementById('sidebar-nav');
+  const btn = document.getElementById('nav-toggle');
+  const open = nav.classList.toggle('nav-open');
+  btn.classList.toggle('nav-toggle-open', open);
+}
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
