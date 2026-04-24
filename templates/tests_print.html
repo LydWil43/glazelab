@@ -144,8 +144,8 @@
 
 <div class="doc-header">
   <button class="print-btn" onclick="window.print()">Print / Save PDF</button>
-  <div class="doc-title">Glaze Test Batch Sheets</div>
-  <div class="doc-meta">Bird Creek Studios · {{ tests|length }} test{% if tests|length != 1 %}s{% endif %}{% if tag_filter %} · tag: {{ tag_filter }}{% endif %} · {{ now }}</div>
+  <div class="doc-title">{% if fire %}{{ fire.name }}{% else %}Glaze Test Batch Sheets{% endif %}</div>
+  <div class="doc-meta">Bird Creek Studios · {{ tests|length }} test{% if tests|length != 1 %}s{% endif %}{% if fire %} · {% if fire.cone %}Cone {{ fire.cone }}{% endif %}{% if fire.cone and fire.atmosphere %} · {% endif %}{% if fire.atmosphere %}{{ fire.atmosphere }}{% endif %}{% endif %}{% if tag_filter %} · tag: {{ tag_filter }}{% endif %} · {{ now }}</div>
   {% if all_tags %}
   <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;" class="no-print">
     <a href="{{ url_for('print_tests') }}" style="font-family:'DM Mono',monospace; font-size:11px; padding:4px 12px; border-radius:12px; border:1px solid #ccc; text-decoration:none; color:{% if not tag_filter %}#8B4A2A{% else %}#888{% endif %}; background:{% if not tag_filter %}#F5EAE0{% else %}#fff{% endif %};">All</a>
@@ -167,60 +167,94 @@
 
   <div class="two-col">
 
-    {# Base Recipe #}
+    {# Base Recipe — use snapshot if available, else fall back to live glaze recipe #}
     <div>
       <div class="section-label">Base Recipe</div>
-      {% set base_ings = test.glaze.ingredients | rejectattr('is_additive') | list %}
-      {% set add_ings  = test.glaze.ingredients | selectattr('is_additive') | list %}
-      {% if base_ings or add_ings %}
-      <table>
-        {% for ing in base_ings %}
-        <tr><td>{{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
-        {% endfor %}
-        {% if add_ings %}
-        <tr><td colspan="2" style="padding-top:6px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted);">Additives</td></tr>
-        {% for ing in add_ings %}
-        <tr class="additive"><td>+ {{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
-        {% endfor %}
+      {% if test.recipe %}
+        {% set snap = test.recipe | fromjson %}
+        {% if snap.base %}
+        <table>
+          {% for ing in snap.base %}
+          <tr><td>{{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
+          {% endfor %}
+        </table>
+        {% else %}
+        <span style="color:var(--text-muted); font-size:11px;">No recipe on file.</span>
         {% endif %}
-      </table>
       {% else %}
-      <span style="color:var(--text-muted); font-size:11px;">No recipe on file.</span>
+        {% set base_ings = test.glaze.ingredients | rejectattr('is_additive') | list %}
+        {% set add_ings  = test.glaze.ingredients | selectattr('is_additive') | list %}
+        {% if base_ings or add_ings %}
+        <table>
+          {% for ing in base_ings %}
+          <tr><td>{{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
+          {% endfor %}
+          {% if add_ings %}
+          <tr><td colspan="2" style="padding-top:6px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted);">Additives</td></tr>
+          {% for ing in add_ings %}
+          <tr class="additive"><td>+ {{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
+          {% endfor %}
+          {% endif %}
+        </table>
+        {% else %}
+        <span style="color:var(--text-muted); font-size:11px;">No recipe on file.</span>
+        {% endif %}
       {% endif %}
     </div>
 
-    {# Progression #}
+    {# Variables / Progression steps #}
     <div>
-      <div class="section-label">Progression</div>
-      {% if test.tiles %}
-      <table>
-        <thead><tr><th>Tile</th><th>Additions</th><th>Atm</th><th class="result-col">Result</th></tr></thead>
-        <tbody>
-        {% for tile in test.tiles %}
-        <tr>
-          <td class="mono">{{ tile.tile_number }}</td>
-          <td>{{ tile.additions or '—' }}</td>
-          <td>{{ tile.atmosphere or '—' }}</td>
-          <td>{{ tile.result_notes[:40] ~ '…' if tile.result_notes and tile.result_notes|length > 40 else tile.result_notes or ('Fired' if tile.atmosphere else 'Pending') }}</td>
-        </tr>
+      {% if test.variables %}
+        {% set pvars = test.variables | fromjson %}
+        {% for var in pvars %}
+        <div style="margin-bottom:10px;">
+          <div class="section-label">{{ var.material }}</div>
+          <table>
+            <thead><tr><th>#</th><th>Add</th><th>Total</th></tr></thead>
+            <tbody>
+            {% for step in var.steps %}
+            <tr>
+              <td class="mono">{{ step.step_number }}</td>
+              <td class="mono">+{{ step.increment }}g</td>
+              <td class="mono">{{ step.cumulative_total }}g</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
         {% endfor %}
-        </tbody>
-      </table>
+      {% elif test.tiles %}
+        <div class="section-label">Progression</div>
+        <table>
+          <thead><tr><th>Tile</th><th>Additions</th><th>Atm</th><th class="result-col">Result</th></tr></thead>
+          <tbody>
+          {% for tile in test.tiles %}
+          <tr>
+            <td class="mono">{{ tile.tile_number }}</td>
+            <td>{{ tile.additions or '—' }}</td>
+            <td>{{ tile.atmosphere or '—' }}</td>
+            <td>{{ tile.result_notes[:40] ~ '…' if tile.result_notes and tile.result_notes|length > 40 else tile.result_notes or ('Fired' if tile.atmosphere else 'Pending') }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
       {% elif test.progression_plan %}
-      {%- set plan = test.progression_plan | fromjson -%}
-      <table>
-        <thead><tr>{% for h in plan.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
-        <tbody>
-        {% for row in plan.rows %}
-        <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
-        {% endfor %}
-        </tbody>
-      </table>
-      {% if plan.note %}
-      <div class="note-box">{{ plan.note }}</div>
-      {% endif %}
+        <div class="section-label">Progression</div>
+        {%- set plan = test.progression_plan | fromjson -%}
+        <table>
+          <thead><tr>{% for h in plan.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+          <tbody>
+          {% for row in plan.rows %}
+          <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% if plan.note %}
+        <div class="note-box">{{ plan.note }}</div>
+        {% endif %}
       {% else %}
-      <span style="color:var(--text-muted); font-size:11px;">No tiles logged yet.</span>
+        <div class="section-label">Steps</div>
+        <span style="color:var(--text-muted); font-size:11px;">No steps logged yet.</span>
       {% endif %}
     </div>
 
