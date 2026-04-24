@@ -1,51 +1,66 @@
 {% extends 'base.html' %}
 {% block title %}New Test{% endblock %}
-{% block topbar_title %}New Test Series{% endblock %}
+{% block topbar_title %}New Test{% endblock %}
+
 {% block content %}
 <div class="form-panel">
   <form method="post" id="test-form">
+
     <div class="form-section">
       <div class="form-group">
         <label>Glaze *</label>
-        <select name="glaze_id" id="glaze-select" required>
+        <select name="glaze_id" required>
           <option value="">Select a glaze…</option>
           {% for glaze in glazes %}
-          <option value="{{ glaze.id }}" data-num="{{ glaze.studio_number }}" {% if preselected_glaze and glaze.id|string == preselected_glaze %}selected{% endif %}>#{{ glaze.studio_number }} — {{ glaze.name }}</option>
+          <option value="{{ glaze.id }}" {% if preselected_glaze and glaze.id|string == preselected_glaze %}selected{% endif %}>
+            #{{ glaze.studio_number }} — {{ glaze.name }}
+          </option>
           {% endfor %}
         </select>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Oxide / Colorant</label>
-          <select name="oxide" id="oxide-select">
-            <option value="">— none —</option>
-            {% for ox in ['Iron','Rutile','Cobalt','Copper','Manganese','Tin','Zircopax','Titanium','Chrome','Nickel','Barium','Strontium'] %}
-            <option value="{{ ox }}">{{ ox }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Test Type</label>
-          <select name="test_type" id="type-select">
-            <option value="wet_progression">Wet Progression</option>
+          <label>Type</label>
+          <select name="test_type">
+            <option value="progression_blend">Progression Blend</option>
             <option value="discrete_batch">Discrete Batch</option>
           </select>
         </div>
+        <div class="form-group">
+          <label>Base Batch Size (g)</label>
+          <input type="number" name="base_batch_size" value="100" step="0.1" min="0">
+        </div>
       </div>
       <div class="form-group">
-        <label>Generated Name</label>
-        <div style="font-family:'DM Mono',monospace; font-size:13px; padding:8px 12px; background:var(--surface-2); border-radius:6px; color:var(--text-mid); min-height:36px;" id="name-preview">—</div>
-        <input type="hidden" name="name" id="name-hidden">
-      </div>
-      <div class="form-group">
-        <label>Base Batch Size (g)</label>
-        <input type="number" name="base_batch_size" value="100" step="0.1">
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <textarea name="description" rows="4" placeholder="Goal, variables, what to look for…"></textarea>
+        <label>Fire (optional)</label>
+        <select name="fire_id">
+          <option value="">— Unassigned —</option>
+          {% for fire in fires %}
+          <option value="{{ fire.id }}">{{ fire.name }}{% if fire.cone %} · {{ fire.cone }}{% endif %}</option>
+          {% endfor %}
+        </select>
       </div>
     </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Base Recipe</div>
+      <div id="base-rows">
+        <div class="ingredient-row">
+          <input type="text" name="base_material" placeholder="Material" class="ing-material">
+          <input type="number" name="base_amount" placeholder="g" step="0.01" min="0" class="ing-amount">
+          <button type="button" class="btn-remove-row" onclick="removeIngRow(this)">×</button>
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost" style="font-size:12px; margin-top:8px;" onclick="addBaseRow()">+ Add Material</button>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Variables</div>
+      <p style="font-size:12px; color:var(--text-muted); margin:0 0 14px;">Each variable generates steps automatically. Step 1 is always the baseline (0 addition).</p>
+      <div id="variable-rows"></div>
+      <button type="button" class="btn btn-ghost" style="font-size:12px; margin-top:8px;" onclick="addVariable()">+ Add Variable</button>
+    </div>
+
     <div class="form-actions">
       <a href="{{ url_for('tests') }}" class="btn btn-ghost">Cancel</a>
       <button type="submit" class="btn btn-primary">Create Test</button>
@@ -56,33 +71,53 @@
 
 {% block scripts %}
 <script>
-const TYPE_LABELS = { wet_progression: 'Progression', discrete_batch: 'Discrete Batch' };
-
-function buildName() {
-  const glazeOpt = document.getElementById('glaze-select').selectedOptions[0];
-  const num = glazeOpt && glazeOpt.dataset.num ? '#' + glazeOpt.dataset.num : '';
-  const oxide = document.getElementById('oxide-select').value;
-  const typeVal = document.getElementById('type-select').value;
-  const typeLabel = TYPE_LABELS[typeVal] || typeVal;
-
-  const parts = [num, oxide, typeLabel].filter(Boolean);
-  const name = parts.join(' – ');
-
-  document.getElementById('name-preview').textContent = name || '—';
-  document.getElementById('name-hidden').value = name;
+function removeIngRow(btn) {
+  const row = btn.closest('.ingredient-row');
+  if (row.parentElement.querySelectorAll('.ingredient-row').length > 1) row.remove();
 }
 
-document.getElementById('glaze-select').addEventListener('change', buildName);
-document.getElementById('oxide-select').addEventListener('change', buildName);
-document.getElementById('type-select').addEventListener('change', buildName);
+function addBaseRow() {
+  const container = document.getElementById('base-rows');
+  const row = document.createElement('div');
+  row.className = 'ingredient-row';
+  row.innerHTML = `
+    <input type="text" name="base_material" placeholder="Material" class="ing-material">
+    <input type="number" name="base_amount" placeholder="g" step="0.01" min="0" class="ing-amount">
+    <button type="button" class="btn-remove-row" onclick="removeIngRow(this)">×</button>
+  `;
+  container.appendChild(row);
+  row.querySelector('input').focus();
+}
 
-document.getElementById('test-form').addEventListener('submit', function(e) {
-  if (!document.getElementById('name-hidden').value) {
-    e.preventDefault();
-    alert('Select a glaze and test type first.');
-  }
-});
+function addVariable() {
+  const container = document.getElementById('variable-rows');
+  const block = document.createElement('div');
+  block.className = 'variable-block';
+  block.innerHTML = `
+    <div class="variable-block-header">
+      <span class="detail-section-label" style="margin:0;">Variable</span>
+      <button type="button" class="btn-remove-row" onclick="this.closest('.variable-block').remove()">Remove</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Material</label>
+        <input type="text" name="var_material" placeholder="e.g. Rutile">
+      </div>
+      <div class="form-group">
+        <label>Step size (g)</label>
+        <input type="number" name="var_step_size" placeholder="0.5" step="0.01" min="0.01" value="0.5">
+      </div>
+      <div class="form-group">
+        <label>Number of steps</label>
+        <input type="number" name="var_step_count" placeholder="6" min="2" step="1" value="6">
+      </div>
+    </div>
+  `;
+  container.appendChild(block);
+  block.querySelector('input[name="var_material"]').focus();
+}
 
-buildName();
+// Start with one variable
+addVariable();
 </script>
 {% endblock %}
