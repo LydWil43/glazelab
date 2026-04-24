@@ -159,11 +159,21 @@
 
 {% for test in tests %}
 <div class="test-block">
+  {% if test.variables %}
+    {% set pvars = test.variables | fromjson %}
+    {% set type_label = 'Progression Blend' if test.test_type == 'progression_blend' else 'Discrete Batch' %}
+    {% set first_var = pvars[0].material if pvars else '' %}
+  {% endif %}
   <div class="test-heading">
-    <div class="test-name">{{ test.name }}</div>
-    <div class="test-status">{{ test.status }} · {{ test.tiles|length }} tiles</div>
+    <div class="test-name">
+      {% if test.variables %}#{{ test.glaze.studio_number }} — {{ first_var }} {{ type_label }}
+      {% else %}{{ test.name }}{% endif %}
+    </div>
   </div>
-  <div class="test-glaze">#{{ test.glaze.studio_number }} {{ test.glaze.name }} · {{ test.test_type.replace('_',' ') }} · {{ test.base_batch_size }}g base</div>
+  <div class="test-glaze">
+    {% if test.variables %}{{ test.glaze.name }} · {{ test.base_batch_size }}g
+    {% else %}#{{ test.glaze.studio_number }} {{ test.glaze.name }}{% endif %}
+  </div>
 
   <div class="two-col">
 
@@ -189,7 +199,7 @@
         <div class="section-label" style="margin-top:10px;">Base Additions</div>
         <table>
           {% for ing in add_ings %}
-          <tr><td>{{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
+          <tr><td><strong>{{ ing.material }}</strong></td><td class="mono" style="text-align:right;"><strong>{{ ing.amount }}g</strong></td></tr>
           {% endfor %}
         </table>
         {% endif %}
@@ -208,7 +218,7 @@
           <div class="section-label" style="margin-top:10px;">Base Additions</div>
           <table>
             {% for ing in has_additives %}
-            <tr><td>{{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
+            <tr><td><strong>{{ ing.material }}</strong></td><td class="mono" style="text-align:right;"><strong>{{ ing.amount }}g</strong></td></tr>
             {% endfor %}
           </table>
           {% endif %}
