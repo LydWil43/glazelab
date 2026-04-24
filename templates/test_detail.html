@@ -73,7 +73,7 @@
 <div class="detail-panel" style="margin-bottom:16px;">
   <div style="padding:12px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
     <div>
-      <div class="detail-section-label" style="margin:0;"><strong>{{ var.material }}</strong></div>
+      <div class="detail-section-label" style="margin:0;">{{ var.material }}</div>
       <div class="card-meta" style="margin-top:2px;">{{ var.step_size }}g per step · {{ var.steps | length }} steps</div>
     </div>
     {% set ns2 = namespace(done=0) %}
@@ -85,8 +85,8 @@
       <thead>
         <tr>
           <th>Step</th>
-          <th><strong>+{{ var.material }}</strong></th>
-          <th><strong>Total</strong></th>
+          <th>+{{ var.material }}</th>
+          <th>Total</th>
           <th>Photo</th>
         </tr>
       </thead>
@@ -94,8 +94,8 @@
         {% for step_idx, step in var.steps | enumerate %}
         <tr>
           <td><span style="font-family:'DM Mono',monospace; font-size:12px; color:var(--clay);">{{ step.step_number }}</span></td>
-          <td><strong><span style="font-family:'DM Mono',monospace; font-size:12px;">+{{ step.increment }}g</span></strong></td>
-          <td><strong><span style="font-family:'DM Mono',monospace; font-size:12px;">{{ step.cumulative_total }}g</span></strong></td>
+          <td><span style="font-family:'DM Mono',monospace; font-size:12px;">+{{ step.increment }}g</span></td>
+          <td><span style="font-family:'DM Mono',monospace; font-size:12px;">{{ step.cumulative_total }}g</span></td>
           <td>
             {% if step.photo_url %}
             <div style="display:flex; align-items:center; gap:10px;">
