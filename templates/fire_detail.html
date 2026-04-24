@@ -48,7 +48,19 @@
           <span style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay);">#{{ test.glaze.studio_number }}</span>
           <span class="muted" style="font-size:12px; margin-left:6px;">{{ test.glaze.name }}</span>
         </td>
-        <td><a href="{{ url_for('test_detail', test_id=test.id) }}" style="font-family:'Libre Baskerville',serif; font-size:13px; color:var(--text); text-decoration:none;">{{ test.name }}</a></td>
+        <td>
+          <a href="{{ url_for('test_detail', test_id=test.id) }}" style="text-decoration:none; color:var(--text);">
+            {% if test.variables %}
+              {% set _fvars = test.variables | fromjson %}
+              {% set _flabel = 'Progression Blend' if test.test_type == 'progression_blend' else 'Discrete Batch' %}
+              <div style="font-family:'Libre Baskerville',serif; font-size:13px;">#{{ test.glaze.studio_number }} — {{ _fvars[0].material if _fvars else '' }} {{ _flabel }}</div>
+              <div style="font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:2px;">{{ test.glaze.name }} · {{ test.base_batch_size }}g</div>
+            {% else %}
+              <div style="font-family:'Libre Baskerville',serif; font-size:13px;">{{ test.name }}</div>
+              <div style="font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:2px;">#{{ test.glaze.studio_number }} {{ test.glaze.name }}</div>
+            {% endif %}
+          </a>
+        </td>
         <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.test_type.replace('_',' ') if test.test_type else '—' }}</span></td>
         <td><span style="font-family:'DM Mono',monospace; font-size:12px;">{{ test.tiles|length }}</span></td>
         <td><span class="status-badge {{ test.status }}">{{ test.status }}</span></td>
@@ -90,7 +102,17 @@
           <span style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay);">#{{ test.glaze.studio_number }}</span>
           <span class="muted" style="font-size:12px; margin-left:6px;">{{ test.glaze.name }}</span>
         </td>
-        <td style="font-family:'Libre Baskerville',serif; font-size:13px;">{{ test.name }}</td>
+        <td>
+          {% if test.variables %}
+            {% set _uvars = test.variables | fromjson %}
+            {% set _ulabel = 'Progression Blend' if test.test_type == 'progression_blend' else 'Discrete Batch' %}
+            <div style="font-family:'Libre Baskerville',serif; font-size:13px;">#{{ test.glaze.studio_number }} — {{ _uvars[0].material if _uvars else '' }} {{ _ulabel }}</div>
+            <div style="font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:2px;">{{ test.glaze.name }} · {{ test.base_batch_size }}g</div>
+          {% else %}
+            <div style="font-family:'Libre Baskerville',serif; font-size:13px;">{{ test.name }}</div>
+            <div style="font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:2px;">#{{ test.glaze.studio_number }} {{ test.glaze.name }}</div>
+          {% endif %}
+        </td>
         <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.test_type.replace('_',' ') if test.test_type else '—' }}</span></td>
         <td>
           {% if test.glaze.tags %}
