@@ -93,7 +93,7 @@ def glazes():
                 Glaze.ingredients.any(Ingredient.material.ilike(f'%{search}%'))
             )
         )
-    all_glazes = query.order_by(text("COALESCE(pinned, false) DESC, CAST(studio_number AS INTEGER) DESC NULLS LAST")).all()
+    all_glazes = query.order_by(text("CAST(studio_number AS INTEGER) DESC NULLS LAST")).all()
     # Collect all unique tags for filter chips
     all_tags = sorted(set(
         t.strip() for g in Glaze.query.all()
@@ -108,12 +108,6 @@ def glaze_detail(glaze_id):
     glaze = Glaze.query.get_or_404(glaze_id)
     return render_template('glaze_detail.html', glaze=glaze)
 
-@app.route('/glazes/<int:glaze_id>/pin', methods=['POST'])
-def toggle_pin(glaze_id):
-    glaze = Glaze.query.get_or_404(glaze_id)
-    glaze.pinned = not glaze.pinned
-    db.session.commit()
-    return redirect(request.referrer or url_for('glazes'))
 
 @app.route('/glazes/new', methods=['GET', 'POST'])
 def new_glaze():
