@@ -5,8 +5,9 @@ from dotenv import load_dotenv
 load_dotenv()
 import cloudinary
 import cloudinary.uploader
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, abort
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from models import db, Glaze, Ingredient, Material, GlazeTest, Tile, FiringLog, Fire
@@ -35,6 +36,7 @@ cloudinary.config(
 USE_CLOUDINARY = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
 
 app.jinja_env.filters['fromjson'] = _json.loads
+app.jinja_env.filters['enumerate'] = enumerate
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -237,29 +239,62 @@ def add_glaze_note(glaze_id):
 
 @app.route('/tests')
 def tests():
-    all_tests = GlazeTest.query.order_by(GlazeTest.created_at.desc()).all()
-    unassigned_count = GlazeTest.query.filter_by(fire_id=None).count()
+    all_tests = GlazeTest.query.filter(GlazeTest.status != 'resolved').order_by(GlazeTest.created_at.desc()).all()
+    unassigned_count = GlazeTest.query.filter(GlazeTest.fire_id == None, GlazeTest.status != 'resolved').count()
     return render_template('tests.html', tests=all_tests, unassigned_count=unassigned_count)
 
 @app.route('/tests/new', methods=['GET', 'POST'])
 def new_test():
     glazes = Glaze.query.order_by(Glaze.studio_number).all()
+    fires = Fire.query.filter(Fire.status != 'archived').order_by(Fire.created_at.desc()).all()
     if request.method == 'POST':
+        glaze = Glaze.query.get_or_404(int(request.form['glaze_id']))
+        test_type = request.form.get('test_type', 'progression_blend')
+        type_label = 'Progression Blend' if test_type == 'progression_blend' else 'Discrete Batch'
+
+        base_materials = request.form.getlist('base_material')
+        base_amounts = request.form.getlist('base_amount')
+        base = [{'material': m, 'amount': float(a)} for m, a in zip(base_materials, base_amounts) if m and a]
+        recipe = _json.dumps({'base': base})
+
+        var_materials = request.form.getlist('var_material')
+        var_step_sizes = request.form.getlist('var_step_size')
+        var_step_counts = request.form.getlist('var_step_count')
+        variables = []
+        for material, step_size_str, step_count_str in zip(var_materials, var_step_sizes, var_step_counts):
+            if not material:
+                continue
+            step_size = float(step_size_str) if step_size_str else 1.0
+            step_count = int(step_count_str) if step_count_str else 5
+            cumulative = 0.0
+            steps = []
+            for i in range(step_count):
+                increment = 0.0 if i == 0 else step_size
+                cumulative = round(cumulative + increment, 4)
+                steps.append({'step_number': i + 1, 'increment': increment,
+                               'cumulative_total': cumulative, 'photo_url': None})
+            variables.append({'material': material, 'step_size': step_size, 'steps': steps})
+
+        fire_id_str = request.form.get('fire_id', '')
+        fire_id = int(fire_id_str) if fire_id_str else None
+        name = f"#{glaze.studio_number} {glaze.name} — {type_label}"
+
         test = GlazeTest(
-            glaze_id=int(request.form['glaze_id']),
-            name=request.form['name'],
-            description=request.form.get('description', ''),
-            test_type=request.form.get('test_type', 'progression_blend'),
+            glaze_id=glaze.id,
+            fire_id=fire_id,
+            name=name,
+            test_type=test_type,
             base_batch_size=float(request.form['base_batch_size']) if request.form.get('base_batch_size') else 100,
-            excluded_ingredients=request.form.get('excluded_ingredients', '[]'),
-            status='planned'
+            status='testing',
+            recipe=recipe,
+            variables=_json.dumps(variables)
         )
         db.session.add(test)
         db.session.commit()
         flash('Test created.', 'success')
         return redirect(url_for('test_detail', test_id=test.id))
     glaze_id = request.args.get('glaze_id')
-    return render_template('test_form.html', glazes=glazes, preselected_glaze=glaze_id)
+    return render_template('test_form.html', glazes=glazes, fires=fires, preselected_glaze=glaze_id)
 
 @app.route('/tests/<int:test_id>')
 def test_detail(test_id):
@@ -273,6 +308,48 @@ def delete_test(test_id):
     db.session.commit()
     flash('Test deleted.', 'success')
     return redirect(url_for('tests'))
+
+def _resolve_test(test, variables):
+    """Serialize a completed test onto its parent glaze and mark resolved."""
+    recipe = _json.loads(test.recipe) if test.recipe else {'base': []}
+    note_data = {
+        'type': test.test_type,
+        'base_batch_size': test.base_batch_size,
+        'recipe': recipe,
+        'variables': variables,
+    }
+    resolved_note = (
+        f"\n\n— Test resolved {datetime.utcnow().strftime('%B %d, %Y')} —\n"
+        + _json.dumps(note_data, indent=2)
+    )
+    test.note = _json.dumps(note_data)
+    test.status = 'resolved'
+    test.fire_id = None
+    glaze = test.glaze
+    glaze.notes = (glaze.notes or '') + resolved_note
+    glaze.updated_at = datetime.utcnow()
+    db.session.commit()
+
+@app.route('/tests/<int:test_id>/steps/<int:var_idx>/<int:step_idx>/photo', methods=['POST'])
+def upload_step_photo(test_id, var_idx, step_idx):
+    test = GlazeTest.query.get_or_404(test_id)
+    if not test.variables:
+        abort(400)
+    variables = _json.loads(test.variables)
+    if var_idx >= len(variables) or step_idx >= len(variables[var_idx]['steps']):
+        abort(400)
+    photo_url = upload_photo(request.files.get('photo'))
+    if not photo_url:
+        flash('Photo upload failed.', 'error')
+        return redirect(url_for('test_detail', test_id=test_id))
+    variables[var_idx]['steps'][step_idx]['photo_url'] = photo_url
+    test.variables = _json.dumps(variables)
+    db.session.commit()
+    all_filled = all(step['photo_url'] for var in variables for step in var['steps'])
+    if all_filled:
+        _resolve_test(test, variables)
+        flash('All photos uploaded — test resolved and saved to glaze record.', 'success')
+    return redirect(url_for('test_detail', test_id=test_id))
 
 @app.route('/tests/<int:test_id>/tiles/new', methods=['GET', 'POST'])
 def new_tile(test_id):
@@ -449,27 +526,36 @@ def fire_sheet(fire_id):
     fire = Fire.query.get_or_404(fire_id)
     tests_data = []
     for test in fire.tests:
-        base = [{'material': i.material, 'amount': i.amount}
-                for i in test.glaze.ingredients if not i.is_additive]
-        additives = [{'material': i.material, 'amount': i.amount}
-                     for i in test.glaze.ingredients if i.is_additive]
-        progression = None
-        if test.tiles:
-            progression = {
-                'headers': ['Tile', 'Additions', 'Atmosphere', 'Result'],
-                'rows': [[t.tile_number, t.additions or '—',
-                          t.atmosphere or '—', t.result_notes or ''] for t in test.tiles]
+        glaze_info = {'studio_number': test.glaze.studio_number,
+                      'name': test.glaze.name, 'tags': test.glaze.tags}
+        if test.variables:
+            test_dict = {
+                'type': test.test_type,
+                'base_batch_size': test.base_batch_size,
+                'recipe': _json.loads(test.recipe) if test.recipe else {'base': []},
+                'variables': _json.loads(test.variables),
             }
-        elif test.progression_plan:
-            progression = _json.loads(test.progression_plan)
-        tests_data.append({
-            'glaze': {'studio_number': test.glaze.studio_number,
-                      'name': test.glaze.name, 'tags': test.glaze.tags},
-            'test': {'name': test.name, 'type': test.test_type,
-                     'base_batch_size': test.base_batch_size, 'status': test.status},
-            'recipe': {'base': base, 'additives': additives},
-            'progression': progression,
-        })
+        else:
+            base = [{'material': i.material, 'amount': i.amount}
+                    for i in test.glaze.ingredients if not i.is_additive]
+            additives = [{'material': i.material, 'amount': i.amount}
+                         for i in test.glaze.ingredients if i.is_additive]
+            progression = None
+            if test.tiles:
+                progression = {
+                    'headers': ['Tile', 'Additions', 'Atmosphere', 'Result'],
+                    'rows': [[t.tile_number, t.additions or '—',
+                              t.atmosphere or '—', t.result_notes or ''] for t in test.tiles]
+                }
+            elif test.progression_plan:
+                progression = _json.loads(test.progression_plan)
+            test_dict = {
+                'name': test.name, 'type': test.test_type,
+                'base_batch_size': test.base_batch_size, 'status': test.status,
+                'recipe': {'base': base, 'additives': additives},
+                'progression': progression,
+            }
+        tests_data.append({'glaze': glaze_info, 'test': test_dict})
     return jsonify({
         'fire': {'name': fire.name, 'cone': fire.cone,
                  'atmosphere': fire.atmosphere, 'status': fire.status,
@@ -540,6 +626,15 @@ def glazy_fetch(glazy_id):
 def init_db():
     with app.app_context():
         db.create_all()
+        # Add new GlazeTest columns if they don't exist yet (Railway/Postgres)
+        try:
+            with db.engine.connect() as conn:
+                conn.execute(text("ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS recipe TEXT"))
+                conn.execute(text("ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS variables TEXT"))
+                conn.execute(text("ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS note TEXT"))
+                conn.commit()
+        except Exception:
+            pass
         if Glaze.query.count() == 0:
             from seed_data import seed
             seed(db, Glaze, Ingredient, Material)
