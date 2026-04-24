@@ -161,6 +161,28 @@ function addVariable() {
 // Only auto-add a variable on create (not edit)
 {% if not test %}
 addVariable();
+
+// Auto-populate base recipe from selected glaze
+const glazeSelect = document.querySelector('select[name="glaze_id"]');
+function loadGlazeRecipe(id) {
+  if (!id) return;
+  fetch('/api/glazes/' + id)
+    .then(r => r.json())
+    .then(data => {
+      const container = document.getElementById('base-rows');
+      const ings = (data.ingredients || []).filter(i => !i.is_additive);
+      if (ings.length === 0) return;
+      container.innerHTML = '';
+      ings.forEach(ing => {
+        const row = document.createElement('div');
+        row.className = 'ingredient-row';
+        row.innerHTML = `<input type="text" name="base_material" value="${ing.material}" placeholder="Material" class="ing-material"><input type="number" name="base_amount" value="${ing.amount}" placeholder="g" step="0.01" min="0" class="ing-amount"><button type="button" class="btn-remove-row" onclick="removeIngRow(this)">×</button>`;
+        container.appendChild(row);
+      });
+    });
+}
+glazeSelect.addEventListener('change', function() { loadGlazeRecipe(this.value); });
+if (glazeSelect.value) loadGlazeRecipe(glazeSelect.value);
 {% endif %}
 </script>
 {% endblock %}
