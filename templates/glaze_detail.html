@@ -78,8 +78,28 @@
           <tbody>
           {% for test in glaze.tests %}
           <tr style="cursor:pointer;" onclick="window.location='{{ url_for('test_detail', test_id=test.id) }}'">
-            <td style="text-align:left; color:var(--text);">{{ test.name }}</td>
-            <td style="text-align:right; font-family:'DM Mono',monospace; font-size:12px; color:var(--text-muted);">{{ test.tiles|length }}</td>
+            <td style="text-align:left; color:var(--text);">
+              {% if test.variables %}
+                {% set _gvars = test.variables | fromjson %}
+                {% set _glabel = 'Progression Blend' if test.test_type == 'progression_blend' else 'Discrete Batch' %}
+                <div style="font-size:13px;">#{{ test.glaze.studio_number }} — {{ _gvars[0].material if _gvars else '' }} {{ _glabel }}</div>
+                <div style="font-size:11px; color:var(--text-muted); font-family:'DM Mono',monospace; margin-top:2px;">{{ test.base_batch_size }}g</div>
+              {% else %}
+                {{ test.name }}
+              {% endif %}
+            </td>
+            <td style="text-align:right; font-family:'DM Mono',monospace; font-size:12px; color:var(--text-muted);">
+              {% if test.variables %}
+                {% set _gns = namespace(total=0, uploaded=0) %}
+                {% for _gv in (test.variables | fromjson) %}{% for _gs in _gv.steps %}
+                  {% set _gns.total = _gns.total + 1 %}
+                  {% if _gs.photo_url %}{% set _gns.uploaded = _gns.uploaded + 1 %}{% endif %}
+                {% endfor %}{% endfor %}
+                {{ _gns.uploaded }}/{{ _gns.total }}
+              {% else %}
+                {{ test.tiles|length }}
+              {% endif %}
+            </td>
             <td style="text-align:right;"><span class="status-badge {{ test.status }}">{{ test.status }}</span></td>
           </tr>
           {% endfor %}
