@@ -481,6 +481,9 @@ a { color: inherit; text-decoration: none; }
 .empty-state a { color: var(--clay); }
 .empty-state a:hover { text-decoration: underline; }
 
+/* ─── HAMBURGER ─── */
+.nav-hamburger { display: none; }
+
 /* ─── MOBILE ─── */
 @media (max-width: 768px) {
   .sidebar { width: 100%; height: auto; position: relative; }
@@ -493,5 +496,33 @@ a { color: inherit; text-decoration: none; }
   .topbar-title { flex: none; width: 100%; }
   .search-bar { width: 100%; }
   .content { padding: 16px; }
+
+  .sidebar-brand { display: flex; align-items: center; justify-content: space-between; padding-right: 4px; }
+  .nav-hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 22px;
+    height: 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+  }
+  .nav-hamburger span {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: var(--text-mid);
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .nav-toggle-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-toggle-open span:nth-child(2) { opacity: 0; }
+  .nav-toggle-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .sidebar-nav { display: none; }
+  .sidebar-nav.nav-open { display: block; }
 }
 
