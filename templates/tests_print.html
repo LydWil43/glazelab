@@ -167,36 +167,53 @@
 
   <div class="two-col">
 
-    {# Base Recipe — use snapshot if it has items, else fall back to live glaze recipe #}
+    {# Base Recipe + Base Additions — snapshot if available, else live glaze ingredients #}
     <div>
-      <div class="section-label">Base Recipe</div>
       {% set snap_base = [] %}
       {% if test.recipe %}
         {% set snap = test.recipe | fromjson %}
         {% if snap.base %}{% set snap_base = snap.base %}{% endif %}
       {% endif %}
+
       {% if snap_base %}
+        <div class="section-label">Base Recipe</div>
         <table>
           {% for ing in snap_base %}
           <tr><td>{{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
           {% endfor %}
         </table>
+        {# Additives from live glaze (not stored in snapshot) #}
+        {% set add_ings = [] %}
+        {% for ing in test.glaze.ingredients %}{% if ing.is_additive %}{% set add_ings = add_ings + [ing] %}{% endif %}{% endfor %}
+        {% if add_ings %}
+        <div class="section-label" style="margin-top:10px;">Base Additions</div>
+        <table>
+          {% for ing in add_ings %}
+          <tr><td>{{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
+          {% endfor %}
+        </table>
+        {% endif %}
       {% else %}
         {% set ings = test.glaze.ingredients %}
         {% if ings %}
-        <table>
-          {% for ing in ings %}
-          {% if not ing.is_additive %}
-          <tr><td>{{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
+          <div class="section-label">Base Recipe</div>
+          <table>
+            {% for ing in ings %}{% if not ing.is_additive %}
+            <tr><td>{{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
+            {% endif %}{% endfor %}
+          </table>
+          {% set has_additives = [] %}
+          {% for ing in ings %}{% if ing.is_additive %}{% set has_additives = has_additives + [ing] %}{% endif %}{% endfor %}
+          {% if has_additives %}
+          <div class="section-label" style="margin-top:10px;">Base Additions</div>
+          <table>
+            {% for ing in has_additives %}
+            <tr><td>{{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
+            {% endfor %}
+          </table>
           {% endif %}
-          {% endfor %}
-          {% for ing in ings %}
-          {% if ing.is_additive %}
-          <tr class="additive"><td>+ {{ ing.material }}</td><td class="mono" style="text-align:right;">{{ ing.amount }}g</td></tr>
-          {% endif %}
-          {% endfor %}
-        </table>
         {% else %}
+        <div class="section-label">Base Recipe</div>
         <span style="color:var(--text-muted); font-size:11px;">No recipe on file.</span>
         {% endif %}
       {% endif %}
