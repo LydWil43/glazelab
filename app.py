@@ -93,7 +93,7 @@ def glazes():
                 Glaze.ingredients.any(Ingredient.material.ilike(f'%{search}%'))
             )
         )
-    all_glazes = query.order_by(text("CAST(studio_number AS INTEGER) DESC NULLS LAST")).all()
+    all_glazes = sorted(query.all(), key=lambda g: int(g.studio_number) if g.studio_number and g.studio_number.isdigit() else 0, reverse=True)
     # Collect all unique tags for filter chips
     all_tags = sorted(set(
         t.strip() for g in Glaze.query.all()
