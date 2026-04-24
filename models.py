@@ -110,11 +110,15 @@ class GlazeTest(db.Model):
     fire_id = db.Column(db.Integer, db.ForeignKey('fires.id'), nullable=True)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
-    test_type = db.Column(db.String(50))  # wet_progression, discrete_batch
+    test_type = db.Column(db.String(50))  # progression_blend, discrete_batch (legacy: wet_progression)
     base_batch_size = db.Column(db.Float)
-    status = db.Column(db.String(50), default='planned')  # planned, mixed, fired, complete
-    progression_plan = db.Column(db.Text)  # JSON: {headers, rows, note}
-    excluded_ingredients = db.Column(db.Text)  # JSON array of material names excluded from base
+    status = db.Column(db.String(50), default='testing')  # testing, resolved (legacy: planned, mixed, fired, complete)
+    progression_plan = db.Column(db.Text)  # legacy JSON: {headers, rows, note}
+    excluded_ingredients = db.Column(db.Text)  # legacy JSON array
+    # New schema fields
+    recipe = db.Column(db.Text)     # JSON: {base: [{material, amount}]}
+    variables = db.Column(db.Text)  # JSON: [{material, step_size, steps: [{step_number, increment, cumulative_total, photo_url}]}]
+    note = db.Column(db.Text)       # populated on resolution
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     tiles = db.relationship('Tile', backref='test', cascade='all, delete-orphan', order_by='Tile.tile_number')
