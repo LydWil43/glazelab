@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
-{% block title %}New Test{% endblock %}
-{% block topbar_title %}New Test{% endblock %}
+{% block title %}{{ 'Edit Test' if test else 'New Test' }}{% endblock %}
+{% block topbar_title %}
+  <a href="{{ url_for('tests') }}" class="breadcrumb">Tests</a> / {{ 'Edit Test' if test else 'New Test' }}
+{% endblock %}
 
 {% block content %}
 <div class="form-panel">
@@ -12,7 +14,9 @@
         <select name="glaze_id" required>
           <option value="">Select a glaze…</option>
           {% for glaze in glazes %}
-          <option value="{{ glaze.id }}" {% if preselected_glaze and glaze.id|string == preselected_glaze %}selected{% endif %}>
+          <option value="{{ glaze.id }}"
+            {% if test and test.glaze_id == glaze.id %}selected
+            {% elif preselected_glaze and glaze.id|string == preselected_glaze %}selected{% endif %}>
             #{{ glaze.studio_number }} — {{ glaze.name }}
           </option>
           {% endfor %}
@@ -22,21 +26,21 @@
         <div class="form-group">
           <label>Type</label>
           <select name="test_type">
-            <option value="progression_blend">Progression Blend</option>
-            <option value="discrete_batch">Discrete Batch</option>
+            <option value="progression_blend" {% if not test or test.test_type == 'progression_blend' %}selected{% endif %}>Progression Blend</option>
+            <option value="discrete_batch" {% if test and test.test_type == 'discrete_batch' %}selected{% endif %}>Discrete Batch</option>
           </select>
         </div>
         <div class="form-group">
           <label>Base Batch Size (g)</label>
-          <input type="number" name="base_batch_size" value="100" step="0.1" min="0">
+          <input type="number" name="base_batch_size" value="{{ test.base_batch_size if test else 100 }}" step="0.1" min="0">
         </div>
       </div>
       <div class="form-group">
-        <label>Fire (optional)</label>
+        <label>Firing (optional)</label>
         <select name="fire_id">
           <option value="">— Unassigned —</option>
           {% for fire in fires %}
-          <option value="{{ fire.id }}">{{ fire.name }}{% if fire.cone %} · {{ fire.cone }}{% endif %}</option>
+          <option value="{{ fire.id }}" {% if test and test.fire_id == fire.id %}selected{% endif %}>{{ fire.name }}{% if fire.cone %} · {{ fire.cone }}{% endif %}</option>
           {% endfor %}
         </select>
       </div>
@@ -45,11 +49,22 @@
     <div class="form-section">
       <div class="form-section-title">Base Recipe</div>
       <div id="base-rows">
+        {% if test and test.recipe %}
+          {% set existing_recipe = test.recipe | fromjson %}
+          {% for ing in existing_recipe.base %}
+          <div class="ingredient-row">
+            <input type="text" name="base_material" value="{{ ing.material }}" placeholder="Material" class="ing-material">
+            <input type="number" name="base_amount" value="{{ ing.amount }}" placeholder="g" step="0.01" min="0" class="ing-amount">
+            <button type="button" class="btn-remove-row" onclick="removeIngRow(this)">×</button>
+          </div>
+          {% endfor %}
+        {% else %}
         <div class="ingredient-row">
           <input type="text" name="base_material" placeholder="Material" class="ing-material">
           <input type="number" name="base_amount" placeholder="g" step="0.01" min="0" class="ing-amount">
           <button type="button" class="btn-remove-row" onclick="removeIngRow(this)">×</button>
         </div>
+        {% endif %}
       </div>
       <button type="button" class="btn btn-ghost" style="font-size:12px; margin-top:8px;" onclick="addBaseRow()">+ Add Material</button>
     </div>
@@ -57,13 +72,39 @@
     <div class="form-section">
       <div class="form-section-title">Variables</div>
       <p style="font-size:12px; color:var(--text-muted); margin:0 0 14px;">Each variable generates steps automatically. Step 1 is always the baseline (0 addition).</p>
-      <div id="variable-rows"></div>
+      <div id="variable-rows">
+        {% if test and test.variables %}
+          {% set existing_vars = test.variables | fromjson %}
+          {% for var in existing_vars %}
+          <div class="variable-block">
+            <div class="variable-block-header">
+              <span class="detail-section-label" style="margin:0;">Variable</span>
+              <button type="button" class="btn-remove-row" onclick="this.closest('.variable-block').remove()">Remove</button>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Material</label>
+                <input type="text" name="var_material" value="{{ var.material }}" placeholder="e.g. Rutile">
+              </div>
+              <div class="form-group">
+                <label>Step size (g)</label>
+                <input type="number" name="var_step_size" value="{{ var.step_size }}" placeholder="0.5" step="0.01" min="0.01">
+              </div>
+              <div class="form-group">
+                <label>Number of steps</label>
+                <input type="number" name="var_step_count" value="{{ var.steps | length }}" placeholder="6" min="2" step="1">
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+      </div>
       <button type="button" class="btn btn-ghost" style="font-size:12px; margin-top:8px;" onclick="addVariable()">+ Add Variable</button>
     </div>
 
     <div class="form-actions">
       <a href="{{ url_for('tests') }}" class="btn btn-ghost">Cancel</a>
-      <button type="submit" class="btn btn-primary">Create Test</button>
+      <button type="submit" class="btn btn-primary">{{ 'Save Changes' if test else 'Create Test' }}</button>
     </div>
   </form>
 </div>
@@ -117,7 +158,9 @@ function addVariable() {
   block.querySelector('input[name="var_material"]').focus();
 }
 
-// Start with one variable
+// Only auto-add a variable on create (not edit)
+{% if not test %}
 addVariable();
+{% endif %}
 </script>
 {% endblock %}
