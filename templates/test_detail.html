@@ -32,30 +32,25 @@
     </div>
     <span class="status-badge {{ test.status }}">{{ test.status }}</span>
   </div>
+  {% set base_ings = test.glaze.ingredients | rejectattr('is_additive') | list %}
+  {% set add_ings = test.glaze.ingredients | selectattr('is_additive') | list %}
+  {% if base_ings or add_ings %}
+  <div style="padding:12px 20px; border-top:1px solid var(--border);">
+    <table class="recipe-table">
+      {% for ing in base_ings %}<tr><td>{{ ing.material }}</td><td>{{ ing.amount }}g</td></tr>{% endfor %}
+      {% if add_ings %}
+      <tr><td colspan="2" style="padding-top:10px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted);">Additives</td></tr>
+      {% for ing in add_ings %}<tr class="additive"><td>+ {{ ing.material }}</td><td>{{ ing.amount }}g</td></tr>{% endfor %}
+      {% endif %}
+    </table>
+  </div>
+  {% endif %}
 </div>
 
 {% if test.variables %}
 {# ══════════════════════════════════════════════ NEW SCHEMA ══ #}
 {% set vars = test.variables | fromjson %}
 {% set recipe = (test.recipe | fromjson) if test.recipe else {'base': []} %}
-
-{# Completion indicator (active tests only) #}
-{% if test.status == 'testing' %}
-  {% set ns = namespace(total=0, uploaded=0) %}
-  {% for var in vars %}{% for step in var.steps %}
-    {% set ns.total = ns.total + 1 %}
-    {% if step.photo_url %}{% set ns.uploaded = ns.uploaded + 1 %}{% endif %}
-  {% endfor %}{% endfor %}
-  <div class="completion-wrap" style="margin-bottom:16px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-      <span style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text-muted);">PHOTOS UPLOADED</span>
-      <span style="font-family:'DM Mono',monospace; font-size:12px; color:{% if ns.uploaded == ns.total %}var(--moss){% else %}var(--text-mid){% endif %};">{{ ns.uploaded }} / {{ ns.total }}</span>
-    </div>
-    <div style="height:4px; background:var(--border); border-radius:2px;">
-      <div style="height:4px; border-radius:2px; background:{% if ns.uploaded == ns.total %}var(--moss){% else %}var(--clay){% endif %}; width:{{ (ns.uploaded / ns.total * 100)|int if ns.total else 0 }}%; transition:width 0.3s;"></div>
-    </div>
-  </div>
-{% endif %}
 
 {# Base recipe #}
 {% if recipe.base %}
