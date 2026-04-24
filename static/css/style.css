@@ -270,6 +270,7 @@ a { color: inherit; text-decoration: none; }
 .status-badge.mixed { background: var(--amber-pale); color: var(--amber); }
 .status-badge.fired { background: var(--clay-pale); color: var(--clay); }
 .status-badge.complete { background: var(--moss-pale); color: var(--moss); }
+.status-badge.resolved { background: var(--moss-pale); color: var(--moss); }
 
 /* ─── DETAIL PANEL ─── */
 .detail-panel {
@@ -436,6 +437,33 @@ a { color: inherit; text-decoration: none; }
 .btn-remove-ing:hover { color: var(--red); }
 
 .form-actions { display: flex; gap: 10px; justify-content: flex-end; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 8px; }
+
+/* ─── TEST FORM ─── */
+.ingredient-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.ing-material { flex: 2; padding: 8px 12px; border: 1px solid var(--border); border-radius: 7px; font-family: 'Jost', sans-serif; font-size: 13px; background: var(--surface); color: var(--text); }
+.ing-amount { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 7px; font-family: 'DM Mono', monospace; font-size: 13px; background: var(--surface); color: var(--text); }
+.btn-remove-row { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; flex-shrink: 0; }
+.btn-remove-row:hover { color: var(--red); }
+.variable-block { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+.variable-block-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+
+/* ─── STEP PHOTO UPLOAD ─── */
+.photo-upload-btn, .photo-replace-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-family: 'Jost', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  color: var(--text-mid);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+.photo-upload-btn:hover { border-color: var(--clay-light); color: var(--clay); }
+.photo-replace-btn { font-size: 11px; color: var(--text-muted); padding: 4px 8px; }
 
 /* ─── DATA TABLE ─── */
 .data-table { width: 100%; border-collapse: collapse; }
