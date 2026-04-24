@@ -22,7 +22,7 @@
         <th>Test Name</th>
         <th>Type</th>
         <th>Base</th>
-        <th>Tiles</th>
+        <th>Progress</th>
         <th>Fire</th>
         <th>Status</th>
       </tr>
@@ -37,7 +37,19 @@
         <td style="font-family:'Libre Baskerville',serif; font-size:13px;">{{ test.name }}</td>
         <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.test_type.replace('_',' ') }}</span></td>
         <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:10px;">{{ test.base_batch_size }}g</span></td>
-        <td><span style="font-family:'DM Mono',monospace; font-size:12px;">{{ test.tiles|length }}</span></td>
+        <td>
+          {% if test.variables %}
+            {% set pvars = test.variables | fromjson %}
+            {% set pns = namespace(total=0, uploaded=0) %}
+            {% for pvar in pvars %}{% for pstep in pvar.steps %}
+              {% set pns.total = pns.total + 1 %}
+              {% if pstep.photo_url %}{% set pns.uploaded = pns.uploaded + 1 %}{% endif %}
+            {% endfor %}{% endfor %}
+            <span style="font-family:'DM Mono',monospace; font-size:12px; color:{% if pns.uploaded == pns.total and pns.total > 0 %}var(--moss){% else %}var(--text-mid){% endif %};">{{ pns.uploaded }}/{{ pns.total }}</span>
+          {% else %}
+            <span style="font-family:'DM Mono',monospace; font-size:12px;">{{ test.tiles|length }} tiles</span>
+          {% endif %}
+        </td>
         <td>
           {% if test.fire %}
           <a href="{{ url_for('fire_detail', fire_id=test.fire.id) }}" onclick="event.stopPropagation();"
