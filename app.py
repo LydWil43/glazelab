@@ -87,7 +87,8 @@ def glazes():
             db.or_(
                 Glaze.name.ilike(f'%{search}%'),
                 Glaze.studio_number.ilike(f'%{search}%'),
-                Glaze.notes.ilike(f'%{search}%')
+                Glaze.notes.ilike(f'%{search}%'),
+                Glaze.ingredients.any(Ingredient.material.ilike(f'%{search}%'))
             )
         )
     all_glazes = query.order_by(Glaze.studio_number).all()
@@ -547,3 +548,4 @@ def init_db():
 if __name__ == '__main__':
     init_db()
     app.run(host='0.0.0.0', port=5000, debug=True)
+
