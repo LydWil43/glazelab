@@ -626,19 +626,26 @@ def glazy_fetch(glazy_id):
 def init_db():
     with app.app_context():
         db.create_all()
-        # Add new GlazeTest columns if they don't exist yet (Railway/Postgres)
-        try:
-            with db.engine.connect() as conn:
-                conn.execute(text("ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS recipe TEXT"))
-                conn.execute(text("ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS variables TEXT"))
-                conn.execute(text("ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS note TEXT"))
-                conn.commit()
-        except Exception:
-            pass
+        _run_migrations()
         if Glaze.query.count() == 0:
             from seed_data import seed
             seed(db, Glaze, Ingredient, Material)
             print("Database seeded.")
+
+def _run_migrations():
+    """Add new columns to existing tables. Safe to run on every startup."""
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(text("ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS recipe TEXT"))
+            conn.execute(text("ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS variables TEXT"))
+            conn.execute(text("ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS note TEXT"))
+            conn.commit()
+    except Exception:
+        pass
+
+# Run migrations on startup so gunicorn picks them up too
+with app.app_context():
+    _run_migrations()
 
 if __name__ == '__main__':
     init_db()
