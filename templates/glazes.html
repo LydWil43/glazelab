@@ -27,34 +27,41 @@
 
 <div class="glaze-grid">
 {% for glaze in glazes %}
-<a class="glaze-card" href="{{ url_for('glaze_detail', glaze_id=glaze.id) }}">
-  <div class="card-header">
-    <div>
-      <div class="card-num">#{{ glaze.studio_number }}</div>
-      <div class="card-name">{{ glaze.name }}</div>
+<div class="glaze-card-wrap">
+  <form class="pin-form" method="post" action="{{ url_for('toggle_pin', glaze_id=glaze.id) }}">
+    <button type="submit" class="pin-btn {% if glaze.pinned %}pinned{% endif %}" title="{% if glaze.pinned %}Unpin{% else %}Pin to top{% endif %}">
+      &#9650;
+    </button>
+  </form>
+  <a class="glaze-card" href="{{ url_for('glaze_detail', glaze_id=glaze.id) }}">
+    <div class="card-header">
+      <div>
+        <div class="card-num">#{{ glaze.studio_number }}</div>
+        <div class="card-name">{{ glaze.name }}</div>
+      </div>
+      <div class="status-dot {{ glaze.status }}"></div>
     </div>
-    <div class="status-dot {{ glaze.status }}"></div>
-  </div>
-  <div class="card-meta">
-    {% if glaze.cone %}{{ glaze.cone }}{% endif %}
-    {% if glaze.glazy_id %} · Glazy {{ glaze.glazy_id }}{% endif %}
-  </div>
-  <div class="card-materials">
-    {{ glaze.ingredients[:4]|map(attribute='material')|join(', ') }}{% if glaze.ingredients|length > 4 %}…{% endif %}
-  </div>
-  <div class="card-tags">
-    {% if glaze.atmosphere %}
-      {% for atm in glaze.atmosphere.split(',') %}
-        <span class="tag tag-{{ atm.strip().lower().replace(' ','') }}">{{ atm.strip() }}</span>
-      {% endfor %}
-    {% endif %}
-    {% if glaze.tags %}
-      {% for t in glaze.tags.split(',') %}
-        <span class="tag" style="background:var(--surface-2);color:var(--text-mid);">{{ t.strip() }}</span>
-      {% endfor %}
-    {% endif %}
-  </div>
-</a>
+    <div class="card-meta">
+      {% if glaze.cone %}{{ glaze.cone }}{% endif %}
+      {% if glaze.glazy_id %} · Glazy {{ glaze.glazy_id }}{% endif %}
+    </div>
+    <div class="card-materials">
+      {{ glaze.ingredients[:4]|map(attribute='material')|join(', ') }}{% if glaze.ingredients|length > 4 %}…{% endif %}
+    </div>
+    <div class="card-tags">
+      {% if glaze.atmosphere %}
+        {% for atm in glaze.atmosphere.split(',') %}
+          <span class="tag tag-{{ atm.strip().lower().replace(' ','') }}">{{ atm.strip() }}</span>
+        {% endfor %}
+      {% endif %}
+      {% if glaze.tags %}
+        {% for t in glaze.tags.split(',') %}
+          <span class="tag" style="background:var(--surface-2);color:var(--text-mid);">{{ t.strip() }}</span>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </a>
+</div>
 {% else %}
 <div class="empty-state">No glazes found. <a href="{{ url_for('new_glaze') }}">Add one.</a></div>
 {% endfor %}
