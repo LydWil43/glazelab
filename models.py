@@ -32,7 +32,6 @@ class Glaze(db.Model):
     umf_sio2 = db.Column(db.Float)
     umf_b2o3 = db.Column(db.Float)
     umf_zro2 = db.Column(db.Float)
-    pinned = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
