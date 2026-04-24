@@ -576,6 +576,12 @@ def delete_fire(fire_id):
     db.session.commit()
     return redirect(url_for('fires'))
 
+@app.route('/fires/<int:fire_id>/print')
+def print_fire(fire_id):
+    fire = Fire.query.get_or_404(fire_id)
+    now = datetime.utcnow().strftime('%B %d, %Y')
+    return render_template('tests_print.html', tests=fire.tests, fire=fire, now=now, all_tags=[], tag_filter='')
+
 @app.route('/fires/<int:fire_id>/sheet.json')
 def fire_sheet(fire_id):
     fire = Fire.query.get_or_404(fire_id)
