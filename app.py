@@ -93,7 +93,7 @@ def glazes():
                 Glaze.ingredients.any(Ingredient.material.ilike(f'%{search}%'))
             )
         )
-    all_glazes = query.order_by(Glaze.pinned.desc(), text("CAST(studio_number AS INTEGER) DESC NULLS LAST")).all()
+    all_glazes = query.order_by(text("COALESCE(pinned, false) DESC, CAST(studio_number AS INTEGER) DESC NULLS LAST")).all()
     # Collect all unique tags for filter chips
     all_tags = sorted(set(
         t.strip() for g in Glaze.query.all()
@@ -695,15 +695,19 @@ def init_db():
 
 def _run_migrations():
     """Add new columns to existing tables. Safe to run on every startup."""
-    try:
-        with db.engine.connect() as conn:
-            conn.execute(text("ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS recipe TEXT"))
-            conn.execute(text("ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS variables TEXT"))
-            conn.execute(text("ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS note TEXT"))
-            conn.execute(text("ALTER TABLE glazes ADD COLUMN IF NOT EXISTS pinned BOOLEAN NOT NULL DEFAULT FALSE"))
-            conn.commit()
-    except Exception:
-        pass
+    migrations = [
+        "ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS recipe TEXT",
+        "ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS variables TEXT",
+        "ALTER TABLE glaze_tests ADD COLUMN IF NOT EXISTS note TEXT",
+        "ALTER TABLE glazes ADD COLUMN IF NOT EXISTS pinned BOOLEAN DEFAULT FALSE",
+    ]
+    for sql in migrations:
+        try:
+            with db.engine.connect() as conn:
+                conn.execute(text(sql))
+                conn.commit()
+        except Exception:
+            pass
 
 # Run migrations on startup so gunicorn picks them up too
 with app.app_context():
