@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% block title %}{{ test.name }}{% endblock %}
+{% block topbar_title %}<a href="{{ url_for('tests') }}" class="breadcrumb">Tests</a> / {{ test.name }}{% endblock %}
+{% block topbar_actions %}
+  <form action="{{ url_for('delete_test', test_id=test.id) }}" method="post" onsubmit="return confirm('Delete this test and all its tiles?')" style="display:inline;">
+    <button type="submit" class="btn btn-danger">Delete Test</button>
+  </form>
+  <a href="{{ url_for('new_tile', test_id=test.id) }}" class="btn btn-primary">+ Log Tile</a>
+{% endblock %}
+
+{% block content %}
+
+{# ── Test header ── #}
+<div class="detail-panel" style="margin-bottom:16px;">
+  <div class="detail-header">
+    <div>
+      <div class="detail-num">
+        <a href="{{ url_for('glaze_detail', glaze_id=test.glaze.id) }}">#{{ test.glaze.studio_number }} {{ test.glaze.name }}</a>
+      </div>
+      <div class="detail-name">{{ test.name }}</div>
+      <div class="card-meta">{{ test.test_type.replace('_',' ') }} · {{ test.base_batch_size }}g base</div>
+      {% if test.glaze.tags %}
+      <div class="card-tags" style="margin-top:6px;">
+        {% for t in test.glaze.tags.split(',') %}
+          <a class="tag" href="{{ url_for('glazes', tag=t.strip()) }}" style="background:var(--clay-pale);color:var(--clay);text-decoration:none;">{{ t.strip() }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <span class="status-badge {{ test.status }}">{{ test.status }}</span>
+  </div>
+</div>
+
+{# ── Recipe + Glaze Notes ── #}
+<div class="detail-panel" style="margin-bottom:16px;">
+  <div class="detail-body">
+
+    {# Left: base recipe #}
+    <div class="detail-col">
+      <div class="detail-section-label">Base Recipe</div>
+      {% set base_ings = test.glaze.ingredients | rejectattr('is_additive') | list %}
+      {% set add_ings  = test.glaze.ingredients | selectattr('is_additive') | list %}
+      {% if base_ings or add_ings %}
+      <table class="recipe-table">
+        {% for ing in base_ings %}
+        <tr><td>{{ ing.material }}</td><td>{{ ing.amount }}g</td></tr>
+        {% endfor %}
+        {% if add_ings %}
+        <tr>
+          <td colspan="2" style="padding-top:12px; font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted);">Additives</td>
+        </tr>
+        {% for ing in add_ings %}
+        <tr class="additive"><td>+ {{ ing.material }}</td><td>{{ ing.amount }}g</td></tr>
+        {% endfor %}
+        {% endif %}
+      </table>
+      {% else %}
+      <span class="muted" style="font-size:12px;">No recipe on file.</span>
+      {% endif %}
+    </div>
+
+    {# Right: glaze notes accordion #}
+    <div class="detail-col">
+      <button class="notes-toggle-btn" onclick="toggleGlazeNotes(this)" aria-expanded="false">
+        <span class="detail-section-label" style="margin:0;">Glaze Notes</span>
+        <span class="notes-toggle-icon">▸</span>
+      </button>
+      <div class="glaze-notes-panel" style="display:none; margin-top:12px;">
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+          <textarea id="new-note-text" rows="2" placeholder="Add a dated note…" style="flex:1; font-family:'DM Mono',monospace; font-size:12px; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); resize:vertical;"></textarea>
+          <button onclick="submitNote({{ test.glaze.id }})" style="align-self:flex-start; padding:8px 14px; background:var(--clay); color:#fff; border:none; border-radius:6px; font-family:'DM Mono',monospace; font-size:11px; cursor:pointer; white-space:nowrap;">+ Add Note</button>
+        </div>
+        <div class="detail-section-label">Studio Notes</div>
+        <div id="studio-notes-box" class="notes-box" style="margin-bottom:14px; white-space:pre-wrap;">{{ test.glaze.notes or '' }}</div>
+        {% if test.glaze.lineage_notes %}
+        <div class="detail-section-label">Lineage</div>
+        <div class="notes-box" style="margin-bottom:14px; white-space:pre-wrap;">{{ test.glaze.lineage_notes }}</div>
+        {% endif %}
+        {% if test.glaze.umf_expansion or test.glaze.umf_na2o or test.glaze.umf_sio2 %}
+        <div class="detail-section-label">UMF</div>
+        <div class="umf-grid">
+          {% if test.glaze.umf_expansion %}
+          <div class="umf-item"><div class="umf-label">Expansion</div><div class="umf-value">{{ test.glaze.umf_expansion }}</div></div>
+          {% endif %}
+          {% if test.glaze.umf_r2o_ro %}
+          <div class="umf-item"><div class="umf-label">R₂O:RO</div><div class="umf-value">{{ test.glaze.umf_r2o_ro }}</div></div>
+          {% endif %}
+          {% if test.glaze.umf_sio2_al2o3 %}
+          <div class="umf-item"><div class="umf-label">SiO₂:Al₂O₃</div><div class="umf-value">{{ test.glaze.umf_sio2_al2o3 }}</div></div>
+          {% endif %}
+          {% if test.glaze.umf_na2o %}<div class="umf-item"><div class="umf-label">Na₂O</div><div class="umf-value">{{ test.glaze.umf_na2o }}</div></div>{% endif %}
+          {% if test.glaze.umf_k2o %}<div class="umf-item"><div class="umf-label">K₂O</div><div class="umf-value">{{ test.glaze.umf_k2o }}</div></div>{% endif %}
+          {% if test.glaze.umf_cao %}<div class="umf-item"><div class="umf-label">CaO</div><div class="umf-value">{{ test.glaze.umf_cao }}</div></div>{% endif %}
+          {% if test.glaze.umf_mgo %}<div class="umf-item"><div class="umf-label">MgO</div><div class="umf-value">{{ test.glaze.umf_mgo }}</div></div>{% endif %}
+          {% if test.glaze.umf_al2o3 %}<div class="umf-item"><div class="umf-label">Al₂O₃</div><div class="umf-value">{{ test.glaze.umf_al2o3 }}</div></div>{% endif %}
+          {% if test.glaze.umf_sio2 %}<div class="umf-item"><div class="umf-label">SiO₂</div><div class="umf-value">{{ test.glaze.umf_sio2 }}</div></div>{% endif %}
+          {% if test.glaze.umf_b2o3 %}<div class="umf-item"><div class="umf-label">B₂O₃</div><div class="umf-value">{{ test.glaze.umf_b2o3 }}</div></div>{% endif %}
+        </div>
+        {% endif %}
+        {% if not test.glaze.notes and not test.glaze.lineage_notes and not test.glaze.umf_expansion %}
+        <span class="muted" style="font-size:12px;">No notes on file for this glaze.</span>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# ── Progression table ── #}
+<div class="detail-panel" style="margin-bottom:24px;">
+  <div style="padding:16px 24px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+    <div class="detail-section-label" style="margin:0;">Progression</div>
+    <span class="card-meta">{{ test.tiles | length }} tile{{ 's' if test.tiles | length != 1 }}</span>
+  </div>
+  {% if test.tiles %}
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tile</th>
+          <th>Additions</th>
+          <th>Cone</th>
+          <th>Atmosphere</th>
+          <th>Result</th>
+          <th>Photo</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tile in test.tiles %}
+        <tr>
+          <td><span style="font-family:'DM Mono',monospace; font-size:12px; color:var(--clay);">{{ tile.tile_number }}</span></td>
+          <td style="max-width:280px;">{{ tile.additions or '—' }}</td>
+          <td>{{ tile.cone or '—' }}</td>
+          <td>{{ tile.atmosphere or '—' }}</td>
+          <td>
+            {% if tile.result_notes %}
+            <span style="font-size:12px; color:var(--text-mid);">{{ tile.result_notes[:60] }}{% if tile.result_notes|length > 60 %}…{% endif %}</span>
+            {% elif tile.atmosphere %}
+            <span class="muted" style="font-size:12px;">Fired — no notes</span>
+            {% else %}
+            <span class="muted" style="font-size:12px;">Pending</span>
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;">
+            {% if tile.photo_path %}
+              <a href="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" target="_blank">
+                <img src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" style="height:40px; width:40px; object-fit:cover; border-radius:4px; display:block;">
+              </a>
+            {% else %}
+              <label class="inline-photo-btn" title="Upload photo">
+                <input type="file" accept="image/*" capture="environment" style="display:none;" onchange="submitTilePhoto(this, {{ tile.id }})">
+                + Photo
+              </label>
+            {% endif %}
+          </td>
+          <td><a href="{{ url_for('edit_tile', tile_id=tile.id) }}" class="table-link">Edit</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif test.progression_plan %}
+  {%- set plan = test.progression_plan | fromjson -%}
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          {% for h in plan.headers %}<th>{{ h }}</th>{% endfor %}
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in plan.rows %}
+        <tr>
+          {% for cell in row %}<td>{{ cell }}</td>{% endfor %}
+          <td><span class="muted" style="font-size:12px;">Pending</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if plan.note %}
+  <div style="padding:12px 24px 16px;">
+    <span class="muted" style="font-size:12px;">{{ plan.note }}</span>
+  </div>
+  {% endif %}
+  <div style="padding:0 24px 20px;">
+    <a href="{{ url_for('new_tile', test_id=test.id) }}" class="btn btn-ghost" style="font-size:12px;">+ Log first tile</a>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    No tiles logged yet. <a href="{{ url_for('new_tile', test_id=test.id) }}">Log the first tile.</a>
+  </div>
+  {% endif %}
+</div>
+
+{# ── Tile photo cards (only when tiles have photos or detailed notes) ── #}
+{% if test.tiles and test.tiles | selectattr('photo_path') | list %}
+<div class="tiles-grid">
+{% for tile in test.tiles %}
+{% if tile.photo_path %}
+<div class="tile-card fired">
+  <div class="tile-header">
+    <div class="tile-num">Tile {{ tile.tile_number }}</div>
+    <div class="tile-status">{{ tile.atmosphere or 'Fired' }}</div>
+  </div>
+  <div class="tile-photo">
+    <img src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" alt="Tile {{ tile.tile_number }}">
+  </div>
+  <div class="tile-body">
+    {% if tile.additions %}<div class="tile-additions">{{ tile.additions }}</div>{% endif %}
+    {% if tile.result_notes %}<div class="tile-notes">{{ tile.result_notes }}</div>{% endif %}
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function submitTilePhoto(input, tileId) {
+  if (!input.files || !input.files[0]) return;
+  var form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/tiles/' + tileId + '/photo';
+  form.enctype = 'multipart/form-data';
+  var fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.name = 'photo';
+  // Transfer the selected file via DataTransfer
+  var dt = new DataTransfer();
+  dt.items.add(input.files[0]);
+  fileInput.files = dt.files;
+  form.appendChild(fileInput);
+  document.body.appendChild(form);
+  form.submit();
+}
+
+function toggleGlazeNotes(btn) {
+  const panel = btn.nextElementSibling;
+  const icon  = btn.querySelector('.notes-toggle-icon');
+  const open  = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  icon.textContent    = open ? '▾' : '▸';
+  btn.setAttribute('aria-expanded', open);
+}
+
+function submitNote(glazeId) {
+  const ta   = document.getElementById('new-note-text');
+  const text = ta.value.trim();
+  if (!text) return;
+  fetch('/glazes/' + glazeId + '/note', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({text: text})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.notes) {
+      document.getElementById('studio-notes-box').innerText = data.notes;
+      ta.value = '';
+    }
+  });
+}
+</script>
+<style>
+.notes-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+.notes-toggle-btn:hover .notes-toggle-icon { color: var(--clay); }
+.notes-toggle-icon {
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+.inline-photo-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--clay);
+  cursor: pointer;
+  padding: 4px 8px;
+  border: 1px dashed var(--clay);
+  border-radius: 4px;
+  white-space: nowrap;
+  display: inline-block;
+}
+.inline-photo-btn:hover { background: var(--clay-pale); }
+</style>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}New Test{% endblock %}
+{% block topbar_title %}New Test Series{% endblock %}
+{% block content %}
+<div class="form-panel">
+  <form method="post" id="test-form">
+    <div class="form-section">
+      <div class="form-group">
+        <label>Glaze *</label>
+        <select name="glaze_id" id="glaze-select" required>
+          <option value="">Select a glaze…</option>
+          {% for glaze in glazes %}
+          <option value="{{ glaze.id }}" data-num="{{ glaze.studio_number }}" {% if preselected_glaze and glaze.id|string == preselected_glaze %}selected{% endif %}>#{{ glaze.studio_number }} — {{ glaze.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# Recipe ingredient selection — shown after glaze is chosen #}
+      <div id="recipe-section" style="display:none;">
+        <div class="detail-section-label" style="margin-bottom:8px;">Base Recipe — deselect to exclude</div>
+        <div id="ingredient-checks" style="display:flex; flex-direction:column; gap:6px; margin-bottom:16px;"></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Oxide / Colorant</label>
+          <select name="oxide" id="oxide-select">
+            <option value="">— none —</option>
+            {% for ox in ['Iron','Rutile','Cobalt','Copper','Manganese','Tin','Zircopax','Titanium','Chrome','Nickel','Barium','Strontium'] %}
+            <option value="{{ ox }}">{{ ox }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Test Type</label>
+          <select name="test_type" id="type-select">
+            <option value="progression_blend">Progression Blend</option>
+            <option value="discrete_batch">Discrete Batch</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Generated Name</label>
+        <div style="font-family:'DM Mono',monospace; font-size:13px; padding:8px 12px; background:var(--surface-2); border-radius:6px; color:var(--text-mid); min-height:36px;" id="name-preview">—</div>
+        <input type="hidden" name="name" id="name-hidden">
+        <input type="hidden" name="excluded_ingredients" id="excluded-hidden" value="[]">
+      </div>
+
+      <div class="form-group">
+        <label>Base Batch Size (g)</label>
+        <input type="number" name="base_batch_size" value="100" step="0.1">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" rows="4" placeholder="Goal, variables, what to look for…"></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <a href="{{ url_for('tests') }}" class="btn btn-ghost">Cancel</a>
+      <button type="submit" class="btn btn-primary">Create Test</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Embed all glaze ingredient data
+const GLAZE_DATA = {
+  {% for glaze in glazes %}
+  "{{ glaze.id }}": {
+    num: "{{ glaze.studio_number }}",
+    ingredients: [
+      {% for ing in glaze.ingredients %}
+      { material: {{ ing.material | tojson }}, amount: {{ ing.amount }}, isAdditive: {{ 'true' if ing.is_additive else 'false' }} }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }{% if not loop.last %},{% endif %}
+  {% endfor %}
+};
+
+const TYPE_LABELS = { progression_blend: 'Progression Blend', discrete_batch: 'Discrete Batch' };
+
+function buildName() {
+  const glazeOpt = document.getElementById('glaze-select').selectedOptions[0];
+  const num = glazeOpt && glazeOpt.dataset.num ? '#' + glazeOpt.dataset.num : '';
+  const oxide = document.getElementById('oxide-select').value;
+  const typeVal = document.getElementById('type-select').value;
+  const typeLabel = TYPE_LABELS[typeVal] || typeVal;
+  const parts = [num, oxide, typeLabel].filter(Boolean);
+  const name = parts.join(' – ');
+  document.getElementById('name-preview').textContent = name || '—';
+  document.getElementById('name-hidden').value = name;
+}
+
+function updateExcluded() {
+  const boxes = document.querySelectorAll('.ing-check');
+  const excluded = [];
+  boxes.forEach(cb => { if (!cb.checked) excluded.push(cb.dataset.material); });
+  document.getElementById('excluded-hidden').value = JSON.stringify(excluded);
+}
+
+function renderIngredients(glazeId) {
+  const section = document.getElementById('recipe-section');
+  const container = document.getElementById('ingredient-checks');
+  container.innerHTML = '';
+
+  if (!glazeId || !GLAZE_DATA[glazeId]) {
+    section.style.display = 'none';
+    return;
+  }
+
+  const ings = GLAZE_DATA[glazeId].ingredients;
+  if (!ings.length) { section.style.display = 'none'; return; }
+
+  ings.forEach((ing, i) => {
+    const row = document.createElement('label');
+    row.style.cssText = 'display:flex; align-items:center; gap:10px; cursor:pointer; font-family:"DM Mono",monospace; font-size:12px; color:var(--text);';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = true;
+    cb.className = 'ing-check';
+    cb.dataset.material = ing.material;
+    cb.addEventListener('change', updateExcluded);
+    const label = document.createElement('span');
+    label.textContent = (ing.isAdditive ? '+ ' : '') + ing.material + '  ' + ing.amount + 'g';
+    if (ing.isAdditive) label.style.color = 'var(--text-muted)';
+    row.appendChild(cb);
+    row.appendChild(label);
+    container.appendChild(row);
+  });
+
+  section.style.display = 'block';
+  updateExcluded();
+}
+
+document.getElementById('glaze-select').addEventListener('change', function() {
+  renderIngredients(this.value);
+  buildName();
+});
+document.getElementById('oxide-select').addEventListener('change', buildName);
+document.getElementById('type-select').addEventListener('change', buildName);
+
+document.getElementById('test-form').addEventListener('submit', function(e) {
+  if (!document.getElementById('name-hidden').value) {
+    e.preventDefault();
+    alert('Select a glaze and test type first.');
+  }
+});
+
+// Init if glaze is preselected
+const preselected = document.getElementById('glaze-select').value;
+if (preselected) renderIngredients(preselected);
+buildName();
+</script>
+{% endblock %}

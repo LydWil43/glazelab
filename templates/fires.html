@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Fires{% endblock %}
+{% block topbar_title %}Fires{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('new_fire') }}" class="btn btn-primary">+ New Fire</a>
+{% endblock %}
+
+{% block content %}
+{% if fires %}
+<div class="detail-panel">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Cone</th>
+        <th>Atmosphere</th>
+        <th>Tests</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fire in fires %}
+      <tr style="cursor:pointer;" onclick="window.location='{{ url_for('fire_detail', fire_id=fire.id) }}'">
+        <td style="font-family:'Libre Baskerville',serif; font-size:13px;">{{ fire.name }}</td>
+        <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:11px;">{{ fire.cone or '—' }}</span></td>
+        <td><span class="muted" style="font-family:'DM Mono',monospace; font-size:11px;">{{ fire.atmosphere or '—' }}</span></td>
+        <td><span style="font-family:'DM Mono',monospace; font-size:12px;">{{ fire.tests|length }}</span></td>
+        <td><span class="status-badge {{ fire.status }}">{{ fire.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">No fires yet. <a href="{{ url_for('new_fire') }}">Create one.</a></div>
+{% endif %}
+{% endblock %}

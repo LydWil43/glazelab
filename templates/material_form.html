@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}{% if material %}Edit Material{% else %}New Material{% endif %}{% endblock %}
+{% block topbar_title %}{% if material %}Edit Material{% else %}New Material{% endif %}{% endblock %}
+{% block content %}
+<div class="form-panel">
+  <form method="post">
+    <div class="form-section">
+      <div class="form-group">
+        <label>Material Name *</label>
+        <input type="text" name="name" value="{{ material.name if material else '' }}" required placeholder="e.g. Ferro Frit 3134">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Price per lb ($)</label>
+          <input type="number" name="price_per_lb" value="{{ material.price_per_lb if material else '' }}" step="0.01" placeholder="e.g. 3.56">
+        </div>
+        <div class="form-group">
+          <label>Stock (lbs)</label>
+          <input type="number" name="stock_lbs" value="{{ material.stock_lbs if material else '' }}" step="0.1" placeholder="e.g. 25">
+        </div>
+        <div class="form-group">
+          <label>Invoice Date</label>
+          <input type="text" name="invoice_date" value="{{ material.invoice_date if material else '' }}" placeholder="e.g. March 2026">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea name="notes" rows="2" placeholder="Any notes about this material…">{{ material.notes if material else '' }}</textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <a href="{{ url_for('materials') }}" class="btn btn-ghost">Cancel</a>
+      <button type="submit" class="btn btn-primary">{% if material %}Save Changes{% else %}Add Material{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
