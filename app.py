@@ -36,6 +36,17 @@ USE_CLOUDINARY = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
 
 app.jinja_env.filters['fromjson'] = _json.loads
 
+def _parse_addition(s):
+    """Return parsed addition dict if stored as JSON, else None."""
+    if s and s.startswith('{'):
+        try:
+            return _json.loads(s)
+        except Exception:
+            pass
+    return None
+
+app.jinja_env.filters['parse_addition'] = _parse_addition
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -264,7 +275,17 @@ def new_test():
 @app.route('/tests/<int:test_id>')
 def test_detail(test_id):
     test = GlazeTest.query.get_or_404(test_id)
-    return render_template('test_detail.html', test=test)
+    # Compute per-material cumulative totals for progression_blend tiles
+    cumulative = {}
+    if test.test_type == 'progression_blend':
+        running = {}
+        for tile in test.tiles:
+            a = _parse_addition(tile.additions)
+            if a and a.get('material') and a['material'] != 'Base' and a.get('increment'):
+                mat = a['material']
+                running[mat] = round(running.get(mat, 0) + a['increment'], 4)
+                cumulative[tile.id] = {'material': mat, 'total': running[mat]}
+    return render_template('test_detail.html', test=test, cumulative=cumulative)
 
 @app.route('/tests/<int:test_id>/status', methods=['POST'])
 def update_test_status(test_id):
@@ -284,13 +305,24 @@ def delete_test(test_id):
 @app.route('/tests/<int:test_id>/tiles/new', methods=['GET', 'POST'])
 def new_tile(test_id):
     test = GlazeTest.query.get_or_404(test_id)
+    materials = Material.query.order_by(Material.name).all()
     if request.method == 'POST':
         photo_path = upload_photo(request.files.get('photo'))
+        if test.test_type == 'progression_blend':
+            mat = request.form.get('addition_material', 'Base')
+            inc_raw = request.form.get('addition_increment', '')
+            if mat == 'Base':
+                additions = _json.dumps({'material': 'Base', 'increment': 0})
+            else:
+                inc = float(inc_raw) if inc_raw else 0
+                additions = _json.dumps({'material': mat, 'increment': inc})
+        else:
+            additions = request.form.get('additions', '')
 
         tile = Tile(
             test_id=test_id,
             tile_number=int(request.form['tile_number']),
-            additions=request.form.get('additions', ''),
+            additions=additions,
             thickness=int(request.form['thickness']) if request.form.get('thickness') else None,
             wood_ash_on_top=request.form.get('wood_ash_on_top') == 'on',
             atmosphere=request.form.get('atmosphere', ''),
@@ -307,17 +339,27 @@ def new_tile(test_id):
         flash('Tile logged.', 'success')
         return redirect(url_for('test_detail', test_id=test_id))
     next_tile = len(test.tiles) + 1
-    return render_template('tile_form.html', test=test, next_tile=next_tile)
+    return render_template('tile_form.html', test=test, next_tile=next_tile, materials=materials)
 
 @app.route('/tiles/<int:tile_id>/edit', methods=['GET', 'POST'])
 def edit_tile(tile_id):
     tile = Tile.query.get_or_404(tile_id)
+    materials = Material.query.order_by(Material.name).all()
     if request.method == 'POST':
         new_photo = upload_photo(request.files.get('photo'))
         if new_photo:
             tile.photo_path = new_photo
 
-        tile.additions = request.form.get('additions', '')
+        if tile.test.test_type == 'progression_blend':
+            mat = request.form.get('addition_material', 'Base')
+            inc_raw = request.form.get('addition_increment', '')
+            if mat == 'Base':
+                tile.additions = _json.dumps({'material': 'Base', 'increment': 0})
+            else:
+                inc = float(inc_raw) if inc_raw else 0
+                tile.additions = _json.dumps({'material': mat, 'increment': inc})
+        else:
+            tile.additions = request.form.get('additions', '')
         tile.thickness = int(request.form['thickness']) if request.form.get('thickness') else None
         tile.wood_ash_on_top = request.form.get('wood_ash_on_top') == 'on'
         tile.atmosphere = request.form.get('atmosphere', '')
@@ -331,7 +373,9 @@ def edit_tile(tile_id):
         db.session.commit()
         flash('Tile updated.', 'success')
         return redirect(url_for('test_detail', test_id=tile.test_id))
-    return render_template('tile_form.html', test=tile.test, tile=tile, next_tile=tile.tile_number)
+    addition_data = _parse_addition(tile.additions)
+    return render_template('tile_form.html', test=tile.test, tile=tile, next_tile=tile.tile_number,
+                           materials=materials, addition_data=addition_data)
 
 # ─── MATERIALS ───────────────────────────────────────────────────────────────
 

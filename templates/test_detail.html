@@ -136,7 +136,14 @@
         {% for tile in test.tiles %}
         <tr>
           <td><span style="font-family:'DM Mono',monospace; font-size:12px; color:var(--clay);">{{ tile.tile_number }}</span></td>
-          <td style="max-width:280px;">{{ tile.additions or '—' }}</td>
+          <td style="max-width:280px;">
+            {% set a = tile.additions | parse_addition %}
+            {% if a %}
+              {% if a.material == 'Base' %}Base{% else %}+{{ a.increment }}g {{ a.material }}{% endif %}
+            {% else %}
+              {{ tile.additions or '—' }}
+            {% endif %}
+          </td>
           <td>{{ tile.cone or '—' }}</td>
           <td>{{ tile.atmosphere or '—' }}</td>
           <td>
@@ -215,7 +222,19 @@
     <img src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" alt="Tile {{ tile.tile_number }}">
   </div>
   <div class="tile-body">
-    {% if tile.additions %}<div class="tile-additions">{{ tile.additions }}</div>{% endif %}
+    {% set a = tile.additions | parse_addition %}
+    {% if a %}
+      <div class="tile-additions">
+        {% if a.material == 'Base' %}Base
+        {% else %}+{{ a.increment }}g {{ a.material }}
+          {% if tile.id in cumulative %}
+            <span style="color:var(--text-muted); font-size:11px; margin-left:6px;">{{ cumulative[tile.id].total }}g total</span>
+          {% endif %}
+        {% endif %}
+      </div>
+    {% elif tile.additions %}
+      <div class="tile-additions">{{ tile.additions }}</div>
+    {% endif %}
     {% if tile.result_notes %}<div class="tile-notes">{{ tile.result_notes }}</div>{% endif %}
   </div>
 </div>

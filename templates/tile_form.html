@@ -24,10 +24,28 @@
           </label>
         </div>
       </div>
+      {% if test.test_type == 'progression_blend' %}
+      <div class="form-group">
+        <label>Material Added</label>
+        <select name="addition_material" id="addition-material" onchange="toggleIncrement(this)">
+          <option value="Base" {% if not addition_data or addition_data.material == 'Base' %}selected{% endif %}>Base (no addition)</option>
+          {% for m in materials %}
+          <option value="{{ m.name }}" {% if addition_data and addition_data.material == m.name %}selected{% endif %}>{{ m.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" id="increment-group" {% if not addition_data or addition_data.material == 'Base' %}style="display:none"{% endif %}>
+        <label>Increment (g)</label>
+        <input type="number" name="addition_increment" step="0.01" min="0"
+               value="{{ addition_data.increment if addition_data and addition_data.material != 'Base' else '' }}"
+               placeholder="e.g. 0.25">
+      </div>
+      {% else %}
       <div class="form-group">
         <label>Additions / Description</label>
         <input type="text" name="additions" value="{{ tile.additions if tile else '' }}" placeholder="e.g. +2g Zircopax (total: 6g), bucket: 107g">
       </div>
+      {% endif %}
     </div>
 
     <div class="form-section">
@@ -101,4 +119,12 @@
     </div>
   </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleIncrement(sel) {
+  document.getElementById('increment-group').style.display = sel.value === 'Base' ? 'none' : 'block';
+}
+</script>
 {% endblock %}
