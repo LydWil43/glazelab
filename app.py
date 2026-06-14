@@ -37,10 +37,19 @@ USE_CLOUDINARY = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
 app.jinja_env.filters['fromjson'] = _json.loads
 
 def _parse_addition(s):
-    """Return parsed addition dict if stored as JSON, else None."""
-    if s and s.startswith('{'):
+    """Return list of {material, increment} dicts, or None.
+    Handles both old single-object format and new array format."""
+    if not s:
+        return None
+    if s.startswith('['):
         try:
-            return _json.loads(s)
+            result = _json.loads(s)
+            return result or None
+        except Exception:
+            pass
+    elif s.startswith('{'):
+        try:
+            return [_json.loads(s)]  # wrap legacy single-object
         except Exception:
             pass
     return None
@@ -280,11 +289,15 @@ def test_detail(test_id):
     if test.test_type == 'progression_blend':
         running = {}
         for tile in test.tiles:
-            a = _parse_addition(tile.additions)
-            if a and a.get('material') and a['material'] != 'Base' and a.get('increment'):
-                mat = a['material']
-                running[mat] = round(running.get(mat, 0) + a['increment'], 4)
-                cumulative[tile.id] = {'material': mat, 'total': running[mat]}
+            items = _parse_addition(tile.additions)
+            if items:
+                for item in items:
+                    mat = item.get('material')
+                    inc = item.get('increment', 0)
+                    if mat and mat != 'Base' and inc:
+                        running[mat] = round(running.get(mat, 0) + inc, 4)
+            if running:
+                cumulative[tile.id] = dict(running)
     return render_template('test_detail.html', test=test, cumulative=cumulative)
 
 @app.route('/tests/<int:test_id>/status', methods=['POST'])
@@ -309,13 +322,11 @@ def new_tile(test_id):
     if request.method == 'POST':
         photo_path = upload_photo(request.files.get('photo'))
         if test.test_type == 'progression_blend':
-            mat = request.form.get('addition_material', 'Base')
-            inc_raw = request.form.get('addition_increment', '')
-            if mat == 'Base':
-                additions = _json.dumps({'material': 'Base', 'increment': 0})
-            else:
-                inc = float(inc_raw) if inc_raw else 0
-                additions = _json.dumps({'material': mat, 'increment': inc})
+            mats = request.form.getlist('addition_material[]')
+            incs = request.form.getlist('addition_increment[]')
+            pairs = [{'material': m, 'increment': float(i) if i else 0}
+                     for m, i in zip(mats, incs) if m]
+            additions = _json.dumps(pairs) if pairs else _json.dumps([{'material': 'Base', 'increment': 0}])
         else:
             additions = request.form.get('additions', '')
 
@@ -351,13 +362,11 @@ def edit_tile(tile_id):
             tile.photo_path = new_photo
 
         if tile.test.test_type == 'progression_blend':
-            mat = request.form.get('addition_material', 'Base')
-            inc_raw = request.form.get('addition_increment', '')
-            if mat == 'Base':
-                tile.additions = _json.dumps({'material': 'Base', 'increment': 0})
-            else:
-                inc = float(inc_raw) if inc_raw else 0
-                tile.additions = _json.dumps({'material': mat, 'increment': inc})
+            mats = request.form.getlist('addition_material[]')
+            incs = request.form.getlist('addition_increment[]')
+            pairs = [{'material': m, 'increment': float(i) if i else 0}
+                     for m, i in zip(mats, incs) if m]
+            tile.additions = _json.dumps(pairs) if pairs else _json.dumps([{'material': 'Base', 'increment': 0}])
         else:
             tile.additions = request.form.get('additions', '')
         tile.thickness = int(request.form['thickness']) if request.form.get('thickness') else None

@@ -137,12 +137,13 @@
         <tr>
           <td><span style="font-family:'DM Mono',monospace; font-size:12px; color:var(--clay);">{{ tile.tile_number }}</span></td>
           <td style="max-width:280px;">
-            {% set a = tile.additions | parse_addition %}
-            {% if a %}
-              {% if a.material == 'Base' %}Base{% else %}+{{ a.increment }}g {{ a.material }}{% endif %}
-            {% else %}
-              {{ tile.additions or '—' }}
-            {% endif %}
+            {% set items = tile.additions | parse_addition %}
+            {% if items %}
+              {% set non_base = items | rejectattr('material', 'equalto', 'Base') | list %}
+              {% if non_base %}
+                {% for item in non_base %}+{{ item.increment }}g {{ item.material }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+              {% else %}Base{% endif %}
+            {% else %}{{ tile.additions or '—' }}{% endif %}
           </td>
           <td>{{ tile.cone or '—' }}</td>
           <td>{{ tile.atmosphere or '—' }}</td>
@@ -222,16 +223,21 @@
     <img src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" alt="Tile {{ tile.tile_number }}">
   </div>
   <div class="tile-body">
-    {% set a = tile.additions | parse_addition %}
-    {% if a %}
+    {% set items = tile.additions | parse_addition %}
+    {% if items %}
+      {% set non_base = items | rejectattr('material', 'equalto', 'Base') | list %}
+      {% if non_base %}
       <div class="tile-additions">
-        {% if a.material == 'Base' %}Base
-        {% else %}+{{ a.increment }}g {{ a.material }}
-          {% if tile.id in cumulative %}
-            <span style="color:var(--text-muted); font-size:11px; margin-left:6px;">{{ cumulative[tile.id].total }}g total</span>
-          {% endif %}
-        {% endif %}
+        {% for item in non_base %}+{{ item.increment }}g {{ item.material }}<br>{% endfor %}
       </div>
+      {% if tile.id in cumulative %}
+      <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+        {% for mat, total in cumulative[tile.id].items() %}{{ mat }}: {{ total }}g{% if not loop.last %} · {% endif %}{% endfor %}
+      </div>
+      {% endif %}
+      {% else %}
+      <div class="tile-additions">Base</div>
+      {% endif %}
     {% elif tile.additions %}
       <div class="tile-additions">{{ tile.additions }}</div>
     {% endif %}

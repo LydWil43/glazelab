@@ -26,19 +26,29 @@
       </div>
       {% if test.test_type == 'progression_blend' %}
       <div class="form-group">
-        <label>Material Added</label>
-        <select name="addition_material" id="addition-material" onchange="toggleIncrement(this)">
-          <option value="Base" {% if not addition_data or addition_data.material == 'Base' %}selected{% endif %}>Base (no addition)</option>
-          {% for m in materials %}
-          <option value="{{ m.name }}" {% if addition_data and addition_data.material == m.name %}selected{% endif %}>{{ m.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group" id="increment-group" {% if not addition_data or addition_data.material == 'Base' %}style="display:none"{% endif %}>
-        <label>Increment (g)</label>
-        <input type="number" name="addition_increment" step="0.01" min="0"
-               value="{{ addition_data.increment if addition_data and addition_data.material != 'Base' else '' }}"
-               placeholder="e.g. 0.25">
+        <label>Additions</label>
+        <div id="additions-list">
+          {# Pre-populate rows when editing #}
+          {% set existing = addition_data if addition_data else [] %}
+          {% set non_base = existing | rejectattr('material', 'equalto', 'Base') | list %}
+          {% if non_base %}
+            {% for item in non_base %}
+            <div class="addition-row" style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+              <select name="addition_material[]" style="flex:2;">
+                <option value="">— material —</option>
+                {% for m in materials %}
+                <option value="{{ m.name }}" {% if m.name == item.material %}selected{% endif %}>{{ m.name }}</option>
+                {% endfor %}
+              </select>
+              <input type="number" name="addition_increment[]" step="0.01" min="0"
+                     value="{{ item.increment }}" placeholder="g" style="flex:1; width:80px;">
+              <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--text-muted); font-size:16px; cursor:pointer; padding:0 4px;">×</button>
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+        <button type="button" onclick="addAdditionRow()" style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay); background:none; border:1px dashed var(--clay); border-radius:4px; padding:4px 10px; cursor:pointer; margin-top:4px;">+ Add material</button>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">Leave empty for Base (no addition)</div>
       </div>
       {% else %}
       <div class="form-group">
@@ -123,8 +133,23 @@
 
 {% block scripts %}
 <script>
-function toggleIncrement(sel) {
-  document.getElementById('increment-group').style.display = sel.value === 'Base' ? 'none' : 'block';
+const MATERIALS = [{{ materials | map(attribute='name') | map('tojson') | join(', ') }}];
+
+function addAdditionRow() {
+  const list = document.getElementById('additions-list');
+  const row = document.createElement('div');
+  row.className = 'addition-row';
+  row.style.cssText = 'display:flex; gap:8px; align-items:center; margin-bottom:8px;';
+  const options = MATERIALS.map(m => `<option value="${m}">${m}</option>`).join('');
+  row.innerHTML = `
+    <select name="addition_material[]" style="flex:2;">
+      <option value="">— material —</option>
+      ${options}
+    </select>
+    <input type="number" name="addition_increment[]" step="0.01" min="0" placeholder="g" style="flex:1; width:80px;">
+    <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; color:var(--text-muted); font-size:16px; cursor:pointer; padding:0 4px;">×</button>
+  `;
+  list.appendChild(row);
 }
 </script>
 {% endblock %}
