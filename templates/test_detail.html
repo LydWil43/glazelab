@@ -232,7 +232,7 @@
       </div>
       {% if tile.id in cumulative %}
       <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-        {% for mat, total in cumulative[tile.id].items() %}{{ mat }}: {{ total }}g{% if not loop.last %} · {% endif %}{% endfor %}
+        {% for mat, total in cumulative[tile.id].items() %}<div>{{ mat }}: {{ total }}g</div>{% endfor %}
       </div>
       {% endif %}
       {% else %}
