@@ -266,6 +266,13 @@ def test_detail(test_id):
     test = GlazeTest.query.get_or_404(test_id)
     return render_template('test_detail.html', test=test)
 
+@app.route('/tests/<int:test_id>/status', methods=['POST'])
+def update_test_status(test_id):
+    test = GlazeTest.query.get_or_404(test_id)
+    test.status = request.form.get('status', test.status)
+    db.session.commit()
+    return redirect(url_for('test_detail', test_id=test_id))
+
 @app.route('/tests/<int:test_id>/delete', methods=['POST'])
 def delete_test(test_id):
     test = GlazeTest.query.get_or_404(test_id)

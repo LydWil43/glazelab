@@ -27,7 +27,13 @@
       </div>
       {% endif %}
     </div>
-    <span class="status-badge {{ test.status }}">{{ test.status }}</span>
+    <form action="{{ url_for('update_test_status', test_id=test.id) }}" method="post" style="display:inline;">
+      <select name="status" onchange="this.form.submit()" style="font-family:'DM Mono',monospace; font-size:11px; padding:4px 8px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); cursor:pointer;">
+        {% for s in ['planned','mixed','fired','complete'] %}
+        <option value="{{ s }}" {% if test.status == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </form>
   </div>
 </div>
 
