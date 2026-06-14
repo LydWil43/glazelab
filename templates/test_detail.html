@@ -124,11 +124,11 @@
       <thead>
         <tr>
           <th>Tile</th>
+          <th>Photo</th>
           <th>Additions</th>
           <th>Cone</th>
           <th>Atmosphere</th>
           <th>Result</th>
-          <th>Photo</th>
           <th></th>
         </tr>
       </thead>
@@ -136,6 +136,18 @@
         {% for tile in test.tiles %}
         <tr>
           <td><span style="font-family:'DM Mono',monospace; font-size:12px; color:var(--clay);">{{ tile.tile_number }}</span></td>
+          <td style="white-space:nowrap;">
+            {% if tile.photo_path %}
+              <a href="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" target="_blank">
+                <img src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" style="height:40px; width:40px; object-fit:cover; border-radius:4px; display:block;">
+              </a>
+            {% else %}
+              <label class="inline-photo-btn" title="Upload photo">
+                <input type="file" accept="image/*" capture="environment" style="display:none;" onchange="submitTilePhoto(this, {{ tile.id }})">
+                + Photo
+              </label>
+            {% endif %}
+          </td>
           <td style="max-width:280px;">
             {% set items = tile.additions | parse_addition %}
             {% if items %}
@@ -154,18 +166,6 @@
             <span class="muted" style="font-size:12px;">Fired — no notes</span>
             {% else %}
             <span class="muted" style="font-size:12px;">Pending</span>
-            {% endif %}
-          </td>
-          <td style="white-space:nowrap;">
-            {% if tile.photo_path %}
-              <a href="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" target="_blank">
-                <img src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" style="height:40px; width:40px; object-fit:cover; border-radius:4px; display:block;">
-              </a>
-            {% else %}
-              <label class="inline-photo-btn" title="Upload photo">
-                <input type="file" accept="image/*" capture="environment" style="display:none;" onchange="submitTilePhoto(this, {{ tile.id }})">
-                + Photo
-              </label>
             {% endif %}
           </td>
           <td><a href="{{ url_for('edit_tile', tile_id=tile.id) }}" class="table-link">Edit</a></td>
