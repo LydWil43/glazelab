@@ -1,15 +1,15 @@
 :root {
   --bg: #F7F4F0;
-  --surface: #FFFFFF;
-  --surface-2: #F0ECE6;
-  --border: #E2DDD8;
-  --border-strong: #C8C0B8;
+  --surface: #F5F0E8;
+  --surface-2: #EDE8DF;
+  --border: #DDD8CF;
+  --border-strong: #C4BCB0;
   --text: #1C1814;
   --text-mid: #5C5650;
   --text-muted: #9C9490;
-  --clay: #4A7B78;
-  --clay-light: #6A9B98;
-  --clay-pale: #E0EEEC;
+  --clay: #6E7A79;
+  --clay-light: #8C9897;
+  --clay-pale: #E4EAEA;
   --moss: #5A6E4A;
   --moss-pale: #E8EDE4;
   --amber: #C08040;
