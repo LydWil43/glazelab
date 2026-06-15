@@ -703,6 +703,43 @@ def save_doc_checkboxes(doc_id):
     db.session.commit()
     return jsonify({'ok': True})
 
+@app.route('/docs/<int:doc_id>/render')
+def render_doc(doc_id):
+    from flask import Response
+    doc = Document.query.get_or_404(doc_id)
+    states = _json.dumps(_json.loads(doc.checkbox_states or '{}'))
+    inject = f"""<script>
+(function(){{
+  var DOC_ID = {doc_id};
+  var SAVED = {states};
+  function init() {{
+    var boxes = document.querySelectorAll('input[type="checkbox"]');
+    boxes.forEach(function(cb, i) {{
+      if (SAVED[String(i)]) cb.checked = true;
+      cb.addEventListener('change', function() {{
+        fetch('/docs/' + DOC_ID + '/checkboxes', {{
+          method: 'POST',
+          headers: {{'Content-Type': 'application/json'}},
+          body: JSON.stringify({{index: i, checked: cb.checked}})
+        }});
+      }});
+    }});
+    parent.postMessage({{iframeHeight: document.documentElement.scrollHeight}}, '*');
+  }}
+  if (document.readyState === 'loading') {{
+    document.addEventListener('DOMContentLoaded', init);
+  }} else {{
+    init();
+  }}
+}})();
+</script>"""
+    html = doc.content
+    if '</body>' in html:
+        html = html.replace('</body>', inject + '</body>')
+    else:
+        html = html + inject
+    return Response(html, mimetype='text/html')
+
 # ─── INIT ─────────────────────────────────────────────────────────────────────
 
 def init_db():

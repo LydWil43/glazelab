@@ -9,30 +9,20 @@
 {% endblock %}
 
 {% block content %}
-<div class="doc-body">
-  {{ doc.content | safe }}
-</div>
+<iframe
+  id="doc-frame"
+  src="{{ url_for('render_doc', doc_id=doc.id) }}"
+  style="width:100%;border:none;min-height:600px;display:block;"
+  scrolling="no"
+></iframe>
 {% endblock %}
 
 {% block scripts %}
 <script>
-const DOC_ID = {{ doc.id }};
-const SAVED_STATES = {{ states | tojson }};
-
-document.addEventListener('DOMContentLoaded', () => {
-  const boxes = document.querySelectorAll('.doc-body input[type="checkbox"]');
-  boxes.forEach((cb, i) => {
-    // Apply saved state
-    if (SAVED_STATES[String(i)]) cb.checked = true;
-    // Save on change
-    cb.addEventListener('change', () => {
-      fetch(`/docs/${DOC_ID}/checkboxes`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({index: i, checked: cb.checked})
-      });
-    });
-  });
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.iframeHeight) {
+    document.getElementById('doc-frame').style.height = (e.data.iframeHeight + 40) + 'px';
+  }
 });
 </script>
 {% endblock %}
