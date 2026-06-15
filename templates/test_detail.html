@@ -214,7 +214,7 @@
 <div class="tiles-grid">
 {% for tile in test.tiles %}
 {% if tile.photo_path %}
-<div class="tile-card fired">
+<div class="tile-card fired" style="cursor:pointer;" onclick="window.location='{{ url_for('edit_tile', tile_id=tile.id) }}'">
   <div class="tile-header">
     <div class="tile-num">Tile {{ tile.tile_number }}</div>
     <div class="tile-status">{{ tile.atmosphere or 'Fired' }}</div>
