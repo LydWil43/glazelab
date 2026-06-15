@@ -46,6 +46,9 @@
       <a class="nav-item {% if request.endpoint in ['docs','doc_detail','new_doc','edit_doc'] %}active{% endif %}" href="{{ url_for('docs') }}">
         Docs
       </a>
+      <a class="nav-item {% if request.endpoint == 'import_doc' %}active{% endif %}" href="{{ url_for('import_doc') }}">
+        Import Doc
+      </a>
     </nav>
   </aside>
 

@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Import Doc{% endblock %}
+{% block topbar_title %}Import Doc{% endblock %}
+
+{% block content %}
+{% if result %}
+<div class="form-panel" style="max-width:600px;">
+  <div style="margin-bottom:20px;">
+    <div style="font-family:'Libre Baskerville',serif;font-size:17px;margin-bottom:4px;">Import complete</div>
+    <div style="font-size:13px;color:var(--text-muted);">Doc saved and tests created.</div>
+  </div>
+
+  <div class="data-table-wrap" style="margin-bottom:20px;">
+    <table class="data-table">
+      <thead><tr><th>Series</th><th>Tiles</th><th></th></tr></thead>
+      <tbody>
+      {% for t in result.tests %}
+        <tr>
+          <td>{{ t.name }}</td>
+          <td>{{ t.tiles }}</td>
+          <td><a href="{{ url_for('test_detail', test_id=t.test_id) }}" class="btn btn-ghost" style="padding:4px 10px;font-size:12px;">View</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if result.glaze %}
+  <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">
+    Linked to glaze #{{ result.glaze.studio_number }} — {{ result.glaze.name }}
+  </div>
+  {% else %}
+  <div style="font-size:12px;color:var(--amber);margin-bottom:16px;">
+    No matching glaze found — tests created without a glaze link.
+  </div>
+  {% endif %}
+
+  <div style="display:flex;gap:10px;">
+    <a href="{{ url_for('doc_detail', doc_id=result.doc.id) }}" class="btn btn-primary">View Doc</a>
+    <a href="{{ url_for('import_doc') }}" class="btn btn-ghost">Import Another</a>
+  </div>
+</div>
+
+{% else %}
+<div class="form-panel" style="max-width:500px;">
+  <div style="font-family:'Libre Baskerville',serif;font-size:17px;margin-bottom:6px;">Import a Color Test Doc</div>
+  <div style="font-size:13px;color:var(--text-muted);margin-bottom:24px;">
+    Upload an HTML file generated with the GlazeLab schema. It will be saved to Docs and the test series will be created automatically.
+  </div>
+  <form method="post" enctype="multipart/form-data">
+    <div class="field-group">
+      <label class="field-label">HTML File</label>
+      <input type="file" name="file" accept=".html,.htm" class="field-input" required>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Import</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

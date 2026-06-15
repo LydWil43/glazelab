@@ -740,6 +740,109 @@ def render_doc(doc_id):
         html = html + inject
     return Response(html, mimetype='text/html')
 
+# ─── DOC IMPORT ───────────────────────────────────────────────────────────────
+
+@app.route('/import-doc', methods=['GET', 'POST'])
+def import_doc():
+    if request.method == 'GET':
+        return render_template('import_doc.html', result=None)
+
+    from bs4 import BeautifulSoup
+
+    f = request.files.get('file')
+    if not f:
+        flash('No file uploaded.', 'error')
+        return redirect(url_for('import_doc'))
+
+    html = f.read().decode('utf-8')
+    soup = BeautifulSoup(html, 'html.parser')
+    root = soup.find(class_='glazelab-import')
+
+    if not root:
+        flash('No glazelab-import marker found in this file. Make sure it was generated with the GlazeLab schema.', 'error')
+        return redirect(url_for('import_doc'))
+
+    # ── Save as Document ──
+    title = (root.get('data-doc-title') or
+             (soup.title.string if soup.title else None) or
+             'Imported Doc')
+    existing_doc = Document.query.filter_by(title=title).first()
+    if existing_doc:
+        existing_doc.content = html
+        doc = existing_doc
+    else:
+        doc = Document(title=title, content=html)
+        db.session.add(doc)
+    db.session.flush()
+
+    # ── Find glaze ──
+    glaze_number = root.get('data-glaze-number')
+    glaze = Glaze.query.filter_by(studio_number=str(glaze_number)).first() if glaze_number else None
+    cone = root.get('data-cone')
+    atmosphere = root.get('data-atmosphere')
+
+    # ── Create tests & tiles ──
+    created_tests = []
+    for series in root.find_all(class_='gl-series'):
+        series_name = series.get('data-name', 'Untitled Series')
+        fixed_addition = series.get('data-fixed', '')
+
+        # Skip if already exists under this glaze
+        existing_test = None
+        if glaze:
+            existing_test = GlazeTest.query.filter_by(
+                glaze_id=glaze.id, name=series_name
+            ).first()
+
+        if existing_test:
+            test = existing_test
+            # Clear old tiles and rebuild
+            for t in test.tiles:
+                db.session.delete(t)
+            db.session.flush()
+        else:
+            test = GlazeTest(
+                glaze_id=glaze.id if glaze else None,
+                name=series_name,
+                test_type='progression_blend',
+                status='planned',
+                description=fixed_addition or None,
+            )
+            db.session.add(test)
+            db.session.flush()
+
+        tiles_created = 0
+        for tile_el in series.find_all(class_='gl-tile'):
+            tile_num = tile_el.get('data-tile')
+            addition = tile_el.get('data-addition', '')
+            try:
+                tile_num = int(tile_num)
+            except (TypeError, ValueError):
+                continue
+            tile = Tile(
+                test_id=test.id,
+                tile_number=tile_num,
+                additions=addition or None,
+                cone=cone,
+                atmosphere=atmosphere,
+            )
+            db.session.add(tile)
+            tiles_created += 1
+
+        created_tests.append({
+            'name': series_name,
+            'tiles': tiles_created,
+            'test_id': test.id,
+        })
+
+    db.session.commit()
+
+    return render_template('import_doc.html', result={
+        'doc': doc,
+        'glaze': glaze,
+        'tests': created_tests,
+    })
+
 # ─── INIT ─────────────────────────────────────────────────────────────────────
 
 def init_db():
