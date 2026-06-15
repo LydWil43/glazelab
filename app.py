@@ -257,9 +257,14 @@ def add_glaze_note(glaze_id):
 
 @app.route('/tests')
 def tests():
-    all_tests = GlazeTest.query.order_by(GlazeTest.created_at.desc()).all()
-    unassigned_count = GlazeTest.query.filter_by(fire_id=None).count()
-    return render_template('tests.html', tests=all_tests, unassigned_count=unassigned_count)
+    active_tests = GlazeTest.query.filter(GlazeTest.status != 'complete').order_by(GlazeTest.created_at.desc()).all()
+    unassigned_count = GlazeTest.query.filter(GlazeTest.fire_id==None, GlazeTest.status != 'complete').count()
+    return render_template('tests.html', tests=active_tests, unassigned_count=unassigned_count)
+
+@app.route('/tests/archive')
+def tests_archive():
+    archived = GlazeTest.query.filter_by(status='complete').order_by(GlazeTest.created_at.desc()).all()
+    return render_template('tests_archive.html', tests=archived)
 
 @app.route('/tests/new', methods=['GET', 'POST'])
 def new_test():
