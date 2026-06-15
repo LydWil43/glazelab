@@ -29,9 +29,6 @@
       <a class="nav-item {% if request.args.get('status')=='testing' %}active{% endif %}" href="{{ url_for('glazes', status='testing') }}">
         Testing
       </a>
-      <a class="nav-item {% if request.args.get('status')=='draft' %}active{% endif %}" href="{{ url_for('glazes', status='draft') }}">
-        Draft
-      </a>
       <div class="nav-section-label">Testing</div>
       <a class="nav-item {% if request.endpoint in ['tests','test_detail','new_test'] %}active{% endif %}" href="{{ url_for('tests') }}">
         Test Series
