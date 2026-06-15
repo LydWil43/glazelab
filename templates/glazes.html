@@ -6,10 +6,13 @@
 {% endblock %}
 
 {% block content %}
+<form class="mobile-search" action="{{ url_for('glazes') }}" method="get">
+  <input type="text" name="q" placeholder="Search glazes…" value="{{ request.args.get('q','') }}">
+</form>
 <div class="filter-row">
-  <a class="filter-chip {% if not status_filter %}active{% endif %}" href="{{ url_for('glazes') }}">All</a>
-  <a class="filter-chip {% if status_filter=='production' %}active{% endif %}" href="{{ url_for('glazes', status='production') }}">Production</a>
   <a class="filter-chip {% if status_filter=='testing' %}active{% endif %}" href="{{ url_for('glazes', status='testing') }}">Testing</a>
+  <a class="filter-chip {% if status_filter=='production' %}active{% endif %}" href="{{ url_for('glazes', status='production') }}">Production</a>
+  <a class="filter-chip {% if not status_filter %}active{% endif %}" href="{{ url_for('glazes') }}">All</a>
 </div>
 
 <div class="results-meta">{{ glazes|length }} glaze{% if glazes|length != 1 %}s{% endif %}{% if search %} matching "{{ search }}"{% endif %}</div>
