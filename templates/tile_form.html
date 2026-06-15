@@ -119,7 +119,30 @@
         {% if tile and tile.photo_path %}
           <div style="margin-bottom:8px;"><img src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" style="max-height:120px; border-radius:6px;"></div>
         {% endif %}
-        <input type="file" name="photo" accept="image/*" capture="environment">
+        <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none;" onchange="openCropper(this)">
+        <input type="hidden" name="photo_data" id="photo-data">
+        <button type="button" onclick="document.getElementById('photo-input').click()"
+          style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay); background:none; border:1px dashed var(--clay); border-radius:4px; padding:6px 14px; cursor:pointer;">
+          Choose Photo
+        </button>
+        <div id="crop-preview" style="margin-top:8px; display:none;">
+          <img id="crop-preview-img" style="max-height:80px; border-radius:6px;">
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Photo ready. <button type="button" onclick="document.getElementById('photo-input').click()" style="background:none;border:none;color:var(--clay);cursor:pointer;font-size:11px;padding:0;">Change</button></div>
+        </div>
+      </div>
+
+      {# Cropper modal #}
+      <div id="crop-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; flex-direction:column; align-items:center; justify-content:center;">
+        <div style="max-width:480px; width:90%; background:#111; border-radius:12px; overflow:hidden;">
+          <div style="padding:14px 18px; border-bottom:1px solid #333; font-family:'DM Mono',monospace; font-size:11px; color:#aaa; text-transform:uppercase; letter-spacing:0.1em;">Crop Photo</div>
+          <div style="position:relative; width:100%; max-height:60vh; overflow:hidden; background:#000;">
+            <img id="crop-img" style="max-width:100%; display:block;">
+          </div>
+          <div style="padding:14px 18px; display:flex; gap:10px; justify-content:flex-end;">
+            <button type="button" onclick="closeCropper()" style="font-family:'DM Mono',monospace; font-size:11px; padding:8px 16px; background:none; border:1px solid #444; color:#aaa; border-radius:6px; cursor:pointer;">Cancel</button>
+            <button type="button" onclick="confirmCrop()" style="font-family:'DM Mono',monospace; font-size:11px; padding:8px 16px; background:var(--clay); border:none; color:#fff; border-radius:6px; cursor:pointer;">Use This Crop</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -132,7 +155,53 @@
 {% endblock %}
 
 {% block scripts %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script>
+let cropper = null;
+
+function openCropper(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.getElementById('crop-img');
+    img.src = e.target.result;
+    const modal = document.getElementById('crop-modal');
+    modal.style.display = 'flex';
+    if (cropper) { cropper.destroy(); cropper = null; }
+    cropper = new Cropper(img, {
+      aspectRatio: 1,
+      viewMode: 1,
+      autoCropArea: 0.85,
+      movable: true,
+      zoomable: true,
+      rotatable: false,
+    });
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function closeCropper() {
+  document.getElementById('crop-modal').style.display = 'none';
+  if (cropper) { cropper.destroy(); cropper = null; }
+}
+
+function confirmCrop() {
+  if (!cropper) return;
+  const canvas = cropper.getCroppedCanvas({ maxWidth: 1200, maxHeight: 1200 });
+  canvas.toBlob(function(blob) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('photo-data').value = e.target.result;
+      const preview = document.getElementById('crop-preview-img');
+      preview.src = e.target.result;
+      document.getElementById('crop-preview').style.display = 'block';
+    };
+    reader.readAsDataURL(blob);
+  }, 'image/jpeg', 0.9);
+  closeCropper();
+}
+
 const MATERIALS = [{{ materials | map(attribute='name') | map('tojson') | join(', ') }}];
 
 function addAdditionRow() {

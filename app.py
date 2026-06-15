@@ -76,10 +76,29 @@ def upload_photo(file):
             resource_type='image',
         )
         return result['secure_url']
-    # fallback: save locally
     filename = secure_filename(f"tile_{datetime.utcnow().timestamp()}_{file.filename}")
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    return f"uploads/{filename}"
+
+def upload_photo_b64(data_url):
+    """Upload a base64 data URL (from cropper) and return a URL string, or None."""
+    if not data_url or not data_url.startswith('data:image'):
+        return None
+    import base64
+    header, b64 = data_url.split(',', 1)
+    image_bytes = base64.b64decode(b64)
+    if USE_CLOUDINARY:
+        result = cloudinary.uploader.upload(
+            f"data:image/jpeg;base64,{b64}",
+            folder='glazelab',
+            resource_type='image',
+        )
+        return result['secure_url']
+    filename = f"tile_{datetime.utcnow().timestamp()}.jpg"
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    with open(os.path.join(app.config['UPLOAD_FOLDER'], filename), 'wb') as f:
+        f.write(image_bytes)
     return f"uploads/{filename}"
 
 # ─── ROUTES ──────────────────────────────────────────────────────────────────
@@ -331,7 +350,8 @@ def new_tile(test_id):
     test = GlazeTest.query.get_or_404(test_id)
     materials = Material.query.order_by(Material.name).all()
     if request.method == 'POST':
-        photo_path = upload_photo(request.files.get('photo'))
+        photo_data = request.form.get('photo_data', '')
+        photo_path = upload_photo_b64(photo_data) or upload_photo(request.files.get('photo'))
         if test.test_type == 'progression_blend':
             mats = request.form.getlist('addition_material[]')
             incs = request.form.getlist('addition_increment[]')
@@ -368,7 +388,8 @@ def edit_tile(tile_id):
     tile = Tile.query.get_or_404(tile_id)
     materials = Material.query.order_by(Material.name).all()
     if request.method == 'POST':
-        new_photo = upload_photo(request.files.get('photo'))
+        photo_data = request.form.get('photo_data', '')
+        new_photo = upload_photo_b64(photo_data) or upload_photo(request.files.get('photo'))
         if new_photo:
             tile.photo_path = new_photo
 
