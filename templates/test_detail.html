@@ -114,12 +114,12 @@
 
 {# ── Progression table ── #}
 <div class="detail-panel" style="margin-bottom:24px;">
-  <div style="padding:16px 24px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+  <div style="padding:16px 24px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; cursor:pointer;" onclick="toggleProgression(this)">
     <div class="detail-section-label" style="margin:0;">Progression</div>
-    <span class="card-meta">{{ test.tiles | length }} tile{{ 's' if test.tiles | length != 1 }}</span>
+    <span class="card-meta">{{ test.tiles | length }} tile{{ 's' if test.tiles | length != 1 }} <span class="prog-toggle-icon" style="margin-left:8px; color:var(--text-muted);">▸</span></span>
   </div>
   {% if test.tiles %}
-  <div style="overflow-x:auto;">
+  <div id="progression-body" style="display:none; overflow-x:auto;">
     <table class="data-table">
       <thead>
         <tr>
@@ -202,6 +202,7 @@
   <div style="padding:0 24px 20px;">
     <a href="{{ url_for('new_tile', test_id=test.id) }}" class="btn btn-ghost" style="font-size:12px;">+ Log first tile</a>
   </div>
+  </div>
   {% else %}
   <div class="empty-state">
     No tiles logged yet. <a href="{{ url_for('new_tile', test_id=test.id) }}">Log the first tile.</a>
@@ -268,6 +269,14 @@ function submitTilePhoto(input, tileId) {
   form.appendChild(fileInput);
   document.body.appendChild(form);
   form.submit();
+}
+
+function toggleProgression(header) {
+  const body = document.getElementById('progression-body');
+  const icon = header.querySelector('.prog-toggle-icon');
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  icon.textContent = open ? '▾' : '▸';
 }
 
 function toggleGlazeNotes(btn) {
