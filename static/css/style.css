@@ -21,7 +21,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: var(--bg);
+  background: #5a5e42;
   font-family: 'Jost', sans-serif;
   color: var(--text);
   min-height: 100vh;
