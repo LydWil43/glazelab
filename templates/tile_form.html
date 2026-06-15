@@ -181,6 +181,11 @@ function startCropper(src) {
       zoomable: true,
       rotatable: false,
       checkOrientation: false,
+      ready: function() {
+        // Make crop box appear as a circle
+        document.querySelector('.cropper-view-box').style.borderRadius = '50%';
+        document.querySelector('.cropper-face').style.borderRadius = '50%';
+      }
     });
   };
 }
