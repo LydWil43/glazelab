@@ -240,10 +240,12 @@ function confirmCrop() {
   closeCropper();
 }
 
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+document.querySelector('.form-panel form').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
+    const modal = document.getElementById('crop-modal');
+    if (modal && modal.style.display !== 'none') return;
     e.preventDefault();
-    document.querySelector('form').submit();
+    this.submit();
   }
 });
 
