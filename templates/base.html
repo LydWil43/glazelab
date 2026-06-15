@@ -18,30 +18,30 @@
     <nav class="sidebar-nav">
       <div class="nav-section-label">Library</div>
       <a class="nav-item {% if request.endpoint in ['index','glazes','glaze_detail'] %}active{% endif %}" href="{{ url_for('glazes') }}">
-        <span class="icon">◇</span> All Glazes
+        All Glazes
       </a>
       <a class="nav-item {% if request.args.get('status')=='production' %}active{% endif %}" href="{{ url_for('glazes', status='production') }}">
-        <span class="icon">✓</span> Production
+        Production
       </a>
       <a class="nav-item {% if request.args.get('status')=='testing' %}active{% endif %}" href="{{ url_for('glazes', status='testing') }}">
-        <span class="icon">◎</span> Testing
+        Testing
       </a>
       <a class="nav-item {% if request.args.get('status')=='draft' %}active{% endif %}" href="{{ url_for('glazes', status='draft') }}">
-        <span class="icon">○</span> Draft
+        Draft
       </a>
       <div class="nav-section-label">Testing</div>
       <a class="nav-item {% if request.endpoint in ['tests','test_detail','new_test'] %}active{% endif %}" href="{{ url_for('tests') }}">
-        <span class="icon">◎</span> Test Series
+        Test Series
       </a>
       <a class="nav-item {% if request.endpoint == 'tests_archive' %}active{% endif %}" href="{{ url_for('tests_archive') }}">
-        <span class="icon">✓</span> Test Archive
+        Test Archive
       </a>
       <a class="nav-item {% if request.endpoint in ['fires','fire_detail','new_fire','edit_fire'] %}active{% endif %}" href="{{ url_for('fires') }}">
-        <span class="icon">△</span> Fires
+        Fires
       </a>
       <div class="nav-section-label">Studio</div>
       <a class="nav-item {% if request.endpoint in ['materials','new_material','edit_material'] %}active{% endif %}" href="{{ url_for('materials') }}">
-        <span class="icon">📦</span> Materials
+        Materials
       </a>
     </nav>
   </aside>
