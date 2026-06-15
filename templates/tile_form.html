@@ -240,6 +240,13 @@ function confirmCrop() {
   closeCropper();
 }
 
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+    e.preventDefault();
+    document.querySelector('form').submit();
+  }
+});
+
 const MATERIALS = [{{ materials | map(attribute='name') | map('tojson') | join(', ') }}];
 
 function addAdditionRow() {
