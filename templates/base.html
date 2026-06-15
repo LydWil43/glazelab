@@ -15,7 +15,10 @@
       <h1>Bird Creek <em>Studios</em></h1>
       <div class="sub">Glaze Lab</div>
     </div>
-    <nav class="sidebar-nav">
+    <button class="nav-toggle" onclick="document.getElementById('sidebar-nav').classList.toggle('open')" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="sidebar-nav" id="sidebar-nav">
       <div class="nav-section-label">Library</div>
       <a class="nav-item {% if request.endpoint in ['index','glazes','glaze_detail'] %}active{% endif %}" href="{{ url_for('glazes') }}">
         All Glazes
