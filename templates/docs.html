@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Docs{% endblock %}
+{% block topbar_title %}Studio Docs{% endblock %}
+{% block topbar_actions %}
+  <a href="{{ url_for('new_doc') }}" class="btn btn-primary">+ New Doc</a>
+{% endblock %}
+
+{% block content %}
+<div class="doc-list">
+{% for doc in documents %}
+  <a class="doc-list-item" href="{{ url_for('doc_detail', doc_id=doc.id) }}">
+    <div class="doc-list-title">{{ doc.title }}</div>
+    <div class="doc-list-date">{{ doc.updated_at.strftime('%b %d, %Y') }}</div>
+  </a>
+{% else %}
+  <div class="empty-state">No docs yet. <a href="{{ url_for('new_doc') }}">Add one.</a></div>
+{% endfor %}
+</div>
+{% endblock %}

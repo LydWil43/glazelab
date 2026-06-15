@@ -43,6 +43,9 @@
       <a class="nav-item {% if request.endpoint in ['materials','new_material','edit_material'] %}active{% endif %}" href="{{ url_for('materials') }}">
         Materials
       </a>
+      <a class="nav-item {% if request.endpoint in ['docs','doc_detail','new_doc','edit_doc'] %}active{% endif %}" href="{{ url_for('docs') }}">
+        Docs
+      </a>
     </nav>
   </aside>
 

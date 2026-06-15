@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{% if doc %}Edit Doc{% else %}New Doc{% endif %}{% endblock %}
+{% block topbar_title %}{% if doc %}Edit Doc{% else %}New Doc{% endif %}{% endblock %}
+
+{% block content %}
+<div class="form-panel">
+  <form method="post">
+    <div class="field-group">
+      <label class="field-label">Title</label>
+      <input class="field-input" type="text" name="title" value="{{ doc.title if doc else '' }}" required autofocus>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Content <span style="font-weight:400;color:var(--text-muted);font-size:11px;">— paste your HTML here</span></label>
+      <textarea class="field-input" name="content" rows="24" style="font-family:'DM Mono',monospace;font-size:12px;">{{ doc.content if doc else '' }}</textarea>
+    </div>
+    <div class="form-actions">
+      <a href="{{ url_for('doc_detail', doc_id=doc.id) if doc else url_for('docs') }}" class="btn btn-ghost">Cancel</a>
+      <button class="btn btn-primary" type="submit">Save</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

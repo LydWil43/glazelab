@@ -157,6 +157,16 @@ class Tile(db.Model):
         }
 
 
+class Document(db.Model):
+    __tablename__ = 'documents'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, default='')
+    checkbox_states = db.Column(db.Text, default='{}')  # JSON: {"0": true, "2": true, ...}
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class FiringLog(db.Model):
     __tablename__ = 'firing_logs'
     id = db.Column(db.Integer, primary_key=True)

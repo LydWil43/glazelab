@@ -9,7 +9,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, f
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from datetime import datetime
-from models import db, Glaze, Ingredient, Material, GlazeTest, Tile, FiringLog, Fire
+from models import db, Glaze, Ingredient, Material, GlazeTest, Tile, FiringLog, Fire, Document
 
 app = Flask(__name__)
 
@@ -650,6 +650,58 @@ def glazy_fetch(glazy_id):
         'umf_r2o_ro':     r2o,
         'umf_sio2_al2o3': sio2_al2o3,
     })
+
+# ─── DOCUMENTS ────────────────────────────────────────────────────────────────
+
+@app.route('/docs')
+def docs():
+    documents = Document.query.order_by(Document.updated_at.desc()).all()
+    return render_template('docs.html', documents=documents)
+
+@app.route('/docs/new', methods=['GET', 'POST'])
+def new_doc():
+    if request.method == 'POST':
+        doc = Document(
+            title=request.form['title'],
+            content=request.form.get('content', ''),
+        )
+        db.session.add(doc)
+        db.session.commit()
+        return redirect(url_for('doc_detail', doc_id=doc.id))
+    return render_template('doc_form.html', doc=None)
+
+@app.route('/docs/<int:doc_id>')
+def doc_detail(doc_id):
+    doc = Document.query.get_or_404(doc_id)
+    states = _json.loads(doc.checkbox_states or '{}')
+    return render_template('doc_detail.html', doc=doc, states=states)
+
+@app.route('/docs/<int:doc_id>/edit', methods=['GET', 'POST'])
+def edit_doc(doc_id):
+    doc = Document.query.get_or_404(doc_id)
+    if request.method == 'POST':
+        doc.title = request.form['title']
+        doc.content = request.form.get('content', '')
+        db.session.commit()
+        return redirect(url_for('doc_detail', doc_id=doc.id))
+    return render_template('doc_form.html', doc=doc)
+
+@app.route('/docs/<int:doc_id>/delete', methods=['POST'])
+def delete_doc(doc_id):
+    doc = Document.query.get_or_404(doc_id)
+    db.session.delete(doc)
+    db.session.commit()
+    return redirect(url_for('docs'))
+
+@app.route('/docs/<int:doc_id>/checkboxes', methods=['POST'])
+def save_doc_checkboxes(doc_id):
+    doc = Document.query.get_or_404(doc_id)
+    data = request.get_json()
+    states = _json.loads(doc.checkbox_states or '{}')
+    states[str(data['index'])] = data['checked']
+    doc.checkbox_states = _json.dumps(states)
+    db.session.commit()
+    return jsonify({'ok': True})
 
 # ─── INIT ─────────────────────────────────────────────────────────────────────
 
