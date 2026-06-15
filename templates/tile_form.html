@@ -117,7 +117,13 @@
       <div class="form-group">
         <label>Photo</label>
         {% if tile and tile.photo_path %}
-          <div style="margin-bottom:8px;"><img src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" style="max-height:120px; border-radius:6px;"></div>
+          <div style="margin-bottom:8px; display:flex; align-items:flex-start; gap:10px;">
+            <img id="existing-photo" src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" style="max-height:120px; border-radius:6px;">
+            <button type="button" onclick="openCropperFromUrl('{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}')"
+              style="font-family:'DM Mono',monospace; font-size:11px; color:var(--clay); background:none; border:1px dashed var(--clay); border-radius:4px; padding:5px 10px; cursor:pointer; white-space:nowrap;">
+              Crop
+            </button>
+          </div>
         {% endif %}
         <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none;" onchange="openCropper(this)">
         <input type="hidden" name="photo_data" id="photo-data">
@@ -160,15 +166,13 @@
 <script>
 let cropper = null;
 
-function openCropper(input) {
-  if (!input.files || !input.files[0]) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const img = document.getElementById('crop-img');
-    img.src = e.target.result;
-    const modal = document.getElementById('crop-modal');
-    modal.style.display = 'flex';
-    if (cropper) { cropper.destroy(); cropper = null; }
+function startCropper(src) {
+  const img = document.getElementById('crop-img');
+  const modal = document.getElementById('crop-modal');
+  if (cropper) { cropper.destroy(); cropper = null; }
+  img.src = src;
+  modal.style.display = 'flex';
+  img.onload = function() {
     cropper = new Cropper(img, {
       aspectRatio: 1,
       viewMode: 1,
@@ -176,9 +180,27 @@ function openCropper(input) {
       movable: true,
       zoomable: true,
       rotatable: false,
+      checkOrientation: true,
     });
   };
+}
+
+function openCropper(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e) { startCropper(e.target.result); };
   reader.readAsDataURL(input.files[0]);
+}
+
+function openCropperFromUrl(url) {
+  // Fetch via proxy to avoid CORS issues with Cloudinary
+  fetch('/proxy-image?url=' + encodeURIComponent(url))
+    .then(r => r.blob())
+    .then(blob => {
+      const reader = new FileReader();
+      reader.onload = function(e) { startCropper(e.target.result); };
+      reader.readAsDataURL(blob);
+    });
 }
 
 function closeCropper() {

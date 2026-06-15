@@ -578,6 +578,21 @@ def fire_sheet(fire_id):
         'tests': tests_data
     })
 
+@app.route('/proxy-image')
+def proxy_image():
+    url = request.args.get('url', '')
+    if not url:
+        return '', 400
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'GlazeLab/1.0'})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = resp.read()
+            content_type = resp.headers.get('Content-Type', 'image/jpeg')
+        from flask import Response
+        return Response(data, content_type=content_type)
+    except Exception:
+        return '', 502
+
 # ─── API ─────────────────────────────────────────────────────────────────────
 
 @app.route('/api/glazes')
