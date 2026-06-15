@@ -223,14 +223,24 @@
     <img src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" alt="Tile {{ tile.tile_number }}">
   </div>
   <div class="tile-body">
-    {% if tile.id in cumulative %}
-    <div style="font-size:10px; color:var(--text-muted); line-height:1.6;">
-      {% for mat, total in cumulative[tile.id].items() %}<div>{{ mat }}: {{ total }}g</div>{% endfor %}
-    </div>
+    {% set items = tile.additions | parse_addition %}
+    {% if items %}
+      {% set non_base = items | rejectattr('material', 'equalto', 'Base') | list %}
+      {% if non_base %}
+      <div class="tile-additions">
+        {% for item in non_base %}+{{ item.increment }}g {{ item.material }}<br>{% endfor %}
+      </div>
+      {% else %}
+      <div class="tile-additions">Base</div>
+      {% endif %}
     {% elif tile.additions %}
       <div class="tile-additions">{{ tile.additions }}</div>
     {% endif %}
-    {% if tile.result_notes %}<div class="tile-notes">{{ tile.result_notes }}</div>{% endif %}
+    {% if tile.id in cumulative %}
+    <div style="font-size:10px; color:var(--text-muted); margin-top:6px; line-height:1.6; border-top:1px solid var(--border); padding-top:6px;">
+      {% for mat, total in cumulative[tile.id].items() %}<div>{{ mat }}: {{ total }}g</div>{% endfor %}
+    </div>
+    {% endif %}
   </div>
 </div>
 {% endif %}
