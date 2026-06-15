@@ -375,8 +375,9 @@ a { color: inherit; text-decoration: none; }
   opacity: 0.85;
 }
 .tile-card.fired { opacity: 1; }
-.tile-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); }
-.tile-num { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; color: var(--clay); }
+.tile-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.tile-num { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; color: var(--clay); display: flex; flex-direction: column; line-height: 1.2; }
+.tile-num span { font-size: 15px; }
 .tile-status { font-family: 'DM Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
 .tile-photo { padding: 6px; display: flex; justify-content: center; }
 .tile-photo img { width: 80px; height: 80px; object-fit: cover; display: block; border-radius: 50%; }
