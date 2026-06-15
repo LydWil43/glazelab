@@ -230,16 +230,16 @@
       <div class="tile-additions">
         {% for item in non_base %}+{{ item.increment }}g {{ item.material }}<br>{% endfor %}
       </div>
-      {% if tile.id in cumulative %}
-      <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-        {% for mat, total in cumulative[tile.id].items() %}<div>{{ mat }}: {{ total }}g</div>{% endfor %}
-      </div>
-      {% endif %}
       {% else %}
       <div class="tile-additions">Base</div>
       {% endif %}
     {% elif tile.additions %}
       <div class="tile-additions">{{ tile.additions }}</div>
+    {% endif %}
+    {% if tile.id in cumulative %}
+    <div style="font-size:10px; color:var(--text-muted); margin-top:6px; line-height:1.6; border-top:1px solid var(--border); padding-top:6px;">
+      {% for mat, total in cumulative[tile.id].items() %}<div>{{ mat }}: {{ total }}g</div>{% endfor %}
+    </div>
     {% endif %}
     {% if tile.result_notes %}<div class="tile-notes">{{ tile.result_notes }}</div>{% endif %}
   </div>

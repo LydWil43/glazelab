@@ -36,9 +36,11 @@ USE_CLOUDINARY = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
 
 app.jinja_env.filters['fromjson'] = _json.loads
 
+import re as _re
+
 def _parse_addition(s):
     """Return list of {material, increment} dicts, or None.
-    Handles both old single-object format and new array format."""
+    Handles JSON array, JSON object, and plain text 'Material +Xg' format."""
     if not s:
         return None
     if s.startswith('['):
@@ -49,9 +51,13 @@ def _parse_addition(s):
             pass
     elif s.startswith('{'):
         try:
-            return [_json.loads(s)]  # wrap legacy single-object
+            return [_json.loads(s)]
         except Exception:
             pass
+    # Plain text format: "Material +Xg"
+    m = _re.match(r'^(.+?)\s*\+(\d+\.?\d*)g?$', s.strip())
+    if m:
+        return [{'material': m.group(1).strip(), 'increment': float(m.group(2))}]
     return None
 
 app.jinja_env.filters['parse_addition'] = _parse_addition
