@@ -60,6 +60,7 @@
           <select name="status">
             <option value="production" {% if glaze and glaze.status=='production' %}selected{% endif %}>Production</option>
             <option value="testing" {% if not glaze or glaze.status=='testing' %}selected{% endif %}>Testing</option>
+            <option value="daisy" {% if glaze and glaze.status=='daisy' %}selected{% endif %}>Daisy</option>
             <option value="draft" {% if glaze and glaze.status=='draft' %}selected{% endif %}>Draft</option>
           </select>
         </div>

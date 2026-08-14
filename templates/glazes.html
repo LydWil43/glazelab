@@ -12,6 +12,7 @@
 <div class="filter-row">
   <a class="filter-chip {% if status_filter=='testing' %}active{% endif %}" href="{{ url_for('glazes', status='testing') }}">Testing</a>
   <a class="filter-chip {% if status_filter=='production' %}active{% endif %}" href="{{ url_for('glazes', status='production') }}">Production</a>
+  <a class="filter-chip {% if status_filter=='daisy' %}active{% endif %}" href="{{ url_for('glazes', status='daisy') }}">Daisy</a>
   <a class="filter-chip {% if not status_filter %}active{% endif %}" href="{{ url_for('glazes') }}">All</a>
 </div>
 

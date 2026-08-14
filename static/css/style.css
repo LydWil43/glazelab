@@ -267,6 +267,7 @@ a { color: inherit; text-decoration: none; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
 .status-dot.production { background: var(--moss); }
 .status-dot.testing { background: var(--amber); }
+.status-dot.daisy { background: #C9A84C; }
 .status-dot.draft { background: var(--border-strong); }
 
 .status-badge {
@@ -280,6 +281,7 @@ a { color: inherit; text-decoration: none; }
 }
 .status-badge.production { background: var(--moss-pale); color: var(--moss); }
 .status-badge.testing { background: var(--amber-pale); color: var(--amber); }
+.status-badge.daisy { background: #FDF6DC; color: #9A7420; }
 .status-badge.draft { background: var(--surface-2); color: var(--text-muted); }
 .status-badge.planned { background: var(--surface-2); color: var(--text-muted); }
 .status-badge.mixed { background: var(--amber-pale); color: var(--amber); }
