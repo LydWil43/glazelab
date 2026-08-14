@@ -89,8 +89,11 @@
       {% endif %}
     </div>
 
-    <!-- RIGHT: UMF + Notes -->
+    <!-- RIGHT: Photo + UMF + Notes -->
     <div class="detail-col">
+      {% if glaze.cover_photo %}
+      <img src="{{ glaze.cover_photo if glaze.cover_photo.startswith('http') else url_for('static', filename=glaze.cover_photo) }}" alt="{{ glaze.name }}" style="width:100%; border-radius:6px; object-fit:cover; max-height:260px; margin-bottom:20px; display:block;">
+      {% endif %}
       {% if glaze.umf_expansion or glaze.umf_al2o3 %}
       <div class="detail-section-label">UMF Analysis</div>
       <div class="umf-grid">
