@@ -124,22 +124,25 @@
       <thead>
         <tr>
           <th>Tile</th>
-          <th>Photo</th>
+          {% if test.test_type != 'discrete_batch' %}<th>Photo</th>{% endif %}
           <th>Additions</th>
           <th>Cone</th>
           <th>Atmosphere</th>
           <th>Result</th>
           <th></th>
+          {% if test.test_type == 'discrete_batch' %}<th></th>{% endif %}
         </tr>
       </thead>
       <tbody>
         {% for tile in test.tiles %}
+        {% set tile_photo_url = tile.photo_path if tile.photo_path and tile.photo_path.startswith('http') else (url_for('static', filename=tile.photo_path) if tile.photo_path else '') %}
         <tr>
           <td><span style="font-family:'DM Mono',monospace; font-size:12px; color:var(--clay);">{{ tile.tile_number }}</span></td>
+          {% if test.test_type != 'discrete_batch' %}
           <td style="white-space:nowrap;">
             {% if tile.photo_path %}
-              <a href="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" target="_blank">
-                <img src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" style="height:40px; width:40px; object-fit:cover; border-radius:4px; display:block;">
+              <a href="{{ tile_photo_url }}" target="_blank">
+                <img src="{{ tile_photo_url }}" style="height:40px; width:40px; object-fit:cover; border-radius:4px; display:block;">
               </a>
             {% else %}
               <label class="inline-photo-btn" title="Upload photo">
@@ -148,6 +151,7 @@
               </label>
             {% endif %}
           </td>
+          {% endif %}
           <td style="max-width:280px;">
             {% set items = tile.additions | parse_addition %}
             {% if items %}
@@ -169,6 +173,13 @@
             {% endif %}
           </td>
           <td><a href="{{ url_for('edit_tile', tile_id=tile.id) }}" class="table-link">Edit</a></td>
+          {% if test.test_type == 'discrete_batch' %}
+          <td style="text-align:right; white-space:nowrap; padding-right:16px;">
+            {% if tile.photo_path %}
+              <img src="{{ tile_photo_url }}" onclick="openLightbox('{{ tile_photo_url }}')" style="height:48px; width:48px; object-fit:cover; border-radius:4px; cursor:pointer; display:inline-block; vertical-align:middle;">
+            {% endif %}
+          </td>
+          {% endif %}
         </tr>
         {% endfor %}
       </tbody>
@@ -249,10 +260,29 @@
 </div>
 {% endif %}
 
+{# ── Lightbox modal ── #}
+<div id="photo-lightbox" onclick="closeLightbox()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center; cursor:pointer;">
+  <img id="photo-lightbox-img" src="" alt="" style="max-width:90vw; max-height:90vh; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.5);">
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
+function openLightbox(url) {
+  var lb = document.getElementById('photo-lightbox');
+  document.getElementById('photo-lightbox-img').src = url;
+  lb.style.display = 'flex';
+}
+
+function closeLightbox() {
+  document.getElementById('photo-lightbox').style.display = 'none';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeLightbox();
+});
+
 function submitTilePhoto(input, tileId) {
   if (!input.files || !input.files[0]) return;
   var form = document.createElement('form');
