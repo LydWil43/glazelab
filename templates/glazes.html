@@ -19,7 +19,12 @@
 
 <div class="glaze-grid">
 {% for glaze in glazes %}
-<a class="glaze-card" href="{{ url_for('glaze_detail', glaze_id=glaze.id) }}">
+<a class="glaze-card {% if glaze.cover_photo %}glaze-card--has-photo{% endif %}" href="{{ url_for('glaze_detail', glaze_id=glaze.id) }}">
+  {% if glaze.cover_photo %}
+  <div class="card-photo">
+    <img src="{{ glaze.cover_photo if glaze.cover_photo.startswith('http') else url_for('static', filename=glaze.cover_photo) }}" alt="{{ glaze.name }}">
+  </div>
+  {% endif %}
   <div class="card-header">
     <div>
       <div class="card-num">#{{ glaze.studio_number }}</div>

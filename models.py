@@ -38,6 +38,17 @@ class Glaze(db.Model):
     ingredients = db.relationship('Ingredient', backref='glaze', cascade='all, delete-orphan', order_by='Ingredient.sort_order')
     tests = db.relationship('GlazeTest', backref='glaze', cascade='all, delete-orphan')
 
+    @property
+    def cover_photo(self):
+        """Return the most recent tile photo across all tests for this glaze."""
+        best_tile = None
+        for test in self.tests:
+            for tile in test.tiles:
+                if tile.photo_path:
+                    if best_tile is None or (tile.created_at and (best_tile.created_at is None or tile.created_at > best_tile.created_at)):
+                        best_tile = tile
+        return best_tile.photo_path if best_tile else None
+
     def glazy_url(self):
         if self.glazy_id:
             return f"https://glazy.org/recipes/{self.glazy_id}"
