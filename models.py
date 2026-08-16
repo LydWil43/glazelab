@@ -162,6 +162,8 @@ class Tile(db.Model):
     fired_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    material_additions = db.relationship('TileAddition', cascade='all, delete-orphan')
+
     def to_dict(self):
         return {
             'id': self.id,

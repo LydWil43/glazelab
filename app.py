@@ -991,8 +991,8 @@ def import_doc_apply():
                     fully_resolved = True
                     for add_idx, add in enumerate(additions_data):
                         field = f'mat_{glaze_number}_{current_s_idx}_{tile_num}_{add_idx}'
-                        choice = (request.form.get(field) or '').strip()
-                        if choice == 'create':
+                        mat_choice = (request.form.get(field) or '').strip()
+                        if mat_choice == 'create':
                             # Create new Material within this transaction
                             existing_mat = Material.query.filter_by(name=add['raw_name']).first()
                             if existing_mat:
@@ -1003,9 +1003,9 @@ def import_doc_apply():
                                 db.session.flush()
                                 mat_id = new_mat.id
                             resolved_additions.append({'material_id': mat_id, 'amount': add['amount']})
-                        elif choice:
+                        elif mat_choice:
                             # Existing material selected
-                            resolved_additions.append({'material_id': int(choice), 'amount': add['amount']})
+                            resolved_additions.append({'material_id': int(mat_choice), 'amount': add['amount']})
                         elif add.get('material_id'):
                             # Already resolved in Phase 1
                             resolved_additions.append({'material_id': add['material_id'], 'amount': add['amount']})
@@ -1042,9 +1042,12 @@ def import_doc_apply():
                     })
 
             db.session.commit()
+            # Access glaze.name after commit (triggers reload) inside try so any
+            # session error is caught rather than surfacing as a 500.
+            glaze_name = glaze.name
             results.append({
                 'glaze_number': glaze_number,
-                'name': glaze.name,
+                'name': glaze_name,
                 'status': 'imported',
                 'glaze_action': glaze_action,
                 'tests_created': tests_created,
@@ -1061,7 +1064,10 @@ def import_doc_apply():
                 'detail': str(e),
             })
 
-    doc = Document.query.get(int(doc_id)) if doc_id else None
+    try:
+        doc = db.session.get(Document, int(doc_id)) if doc_id else None
+    except Exception:
+        doc = None
     return render_template('import_doc.html', state='result', results=results, doc=doc)
 
 # ─── INIT ─────────────────────────────────────────────────────────────────────
