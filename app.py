@@ -201,7 +201,10 @@ def new_glaze():
         db.session.commit()
         flash('Glaze added successfully.', 'success')
         return redirect(url_for('glaze_detail', glaze_id=glaze.id))
-    return render_template('glaze_form.html', glaze=None)
+    all_numbers = [g.studio_number for g in Glaze.query.with_entities(Glaze.studio_number).all()]
+    numeric = [int(n) for n in all_numbers if n and n.isdigit()]
+    next_number = str(max(numeric) + 1) if numeric else ''
+    return render_template('glaze_form.html', glaze=None, next_studio_number=next_number)
 
 @app.route('/glazes/<int:glaze_id>/edit', methods=['GET', 'POST'])
 def edit_glaze(glaze_id):
