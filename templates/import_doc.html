@@ -164,7 +164,8 @@
             <div style="display:flex;flex-direction:column;gap:6px;">
               <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
                 <input type="radio" name="{{ field_id }}_action" value="existing"
-                       onchange="document.getElementById('{{ field_id }}_existing').style.display='flex'; document.getElementById('{{ field_id }}_create').style.display='none'">
+                       class="mat-resolution-radio"
+                       onchange="document.getElementById('{{ field_id }}_existing').style.display='flex'; document.getElementById('{{ field_id }}_create').style.display='none'; checkResolutions()">
                 Map to existing material:
                 <select id="{{ field_id }}_existing" name="{{ field_id }}_existing"
                         class="field-input" style="display:none;width:220px;padding:4px 8px;font-size:13px;">
@@ -175,12 +176,13 @@
                 </select>
               </label>
               <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
-                <input type="radio" name="{{ field_id }}_action" value="create" checked
-                       onchange="document.getElementById('{{ field_id }}_create').style.display='flex'; document.getElementById('{{ field_id }}_existing').style.display='none'">
+                <input type="radio" name="{{ field_id }}_action" value="create"
+                       class="mat-resolution-radio"
+                       onchange="document.getElementById('{{ field_id }}_create').style.display='flex'; document.getElementById('{{ field_id }}_existing').style.display='none'; checkResolutions()">
                 Create new material named:
                 <input type="text" id="{{ field_id }}_create" name="{{ field_id }}_create"
                        value="{{ add.raw_name }}"
-                       class="field-input" style="display:flex;width:220px;padding:4px 8px;font-size:13px;">
+                       class="field-input" style="display:none;width:220px;padding:4px 8px;font-size:13px;">
               </label>
             </div>
           </div>
@@ -195,13 +197,31 @@
   {% endfor %}
 
   <div style="margin-top:20px;display:flex;gap:10px;align-items:center;">
-    <button class="btn btn-primary" type="submit">Apply</button>
+    <button id="apply-btn" class="btn btn-primary" type="submit">Apply</button>
     <a href="{{ url_for('import_doc') }}" class="btn btn-ghost">Cancel</a>
-    <span style="font-size:12px;color:var(--text-muted);margin-left:4px;">
-      Clean matches and new glazes apply automatically. Name mismatches need a decision above.
+    <span id="apply-hint" style="font-size:12px;color:var(--amber);margin-left:4px;display:none;">
+      Resolve all unmatched materials above before applying.
     </span>
   </div>
 </form>
+
+{% block scripts %}
+{% if state == 'preview' %}
+<script>
+function checkResolutions() {
+  const groups = {};
+  document.querySelectorAll('.mat-resolution-radio').forEach(function(r) {
+    groups[r.name] = groups[r.name] || false;
+    if (r.checked) groups[r.name] = true;
+  });
+  const allResolved = Object.values(groups).every(Boolean);
+  document.getElementById('apply-btn').disabled = !allResolved;
+  document.getElementById('apply-hint').style.display = allResolved ? 'none' : 'inline';
+}
+checkResolutions();
+</script>
+{% endif %}
+{% endblock %}
 
 {# ── RESULT ────────────────────────────────────────────────────────────────── #}
 {% elif state == 'result' %}

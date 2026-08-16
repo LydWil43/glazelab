@@ -314,20 +314,28 @@ def new_test():
 @app.route('/tests/<int:test_id>')
 def test_detail(test_id):
     test = GlazeTest.query.get_or_404(test_id)
-    # Compute per-material cumulative totals for progression_blend tiles
+    # Compute per-material cumulative totals for progression_blend tiles.
+    # Prefer TileAddition records (from import); fall back to parsing tile.additions text.
     cumulative = {}
     if test.test_type == 'progression_blend':
         running = {}
         for tile in test.tiles:
-            items = _parse_addition(tile.additions)
-            if items:
-                for item in items:
-                    mat = item.get('material')
-                    inc = item.get('increment', 0)
-                    if mat and mat != 'Base' and inc:
-                        running[mat] = round(running.get(mat, 0) + inc, 4)
-            if running:
-                cumulative[tile.id] = dict(running)
+            tile_adds = (db.session.query(TileAddition, Material)
+                         .join(Material, TileAddition.material_id == Material.id)
+                         .filter(TileAddition.tile_id == tile.id)
+                         .order_by(TileAddition.sort_order).all())
+            if tile_adds:
+                cumulative[tile.id] = {mat.name: ta.amount for ta, mat in tile_adds}
+            else:
+                items = _parse_addition(tile.additions)
+                if items:
+                    for item in items:
+                        mat = item.get('material')
+                        inc = item.get('increment', 0)
+                        if mat and mat != 'Base' and inc:
+                            running[mat] = round(running.get(mat, 0) + inc, 4)
+                if running:
+                    cumulative[tile.id] = dict(running)
     return render_template('test_detail.html', test=test, cumulative=cumulative)
 
 @app.route('/tests/<int:test_id>/status', methods=['POST'])
