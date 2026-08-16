@@ -159,6 +159,8 @@
               {% if non_base %}
                 {% for item in non_base %}+{{ item.increment }}g {{ item.material }}{% if not loop.last %}<br>{% endif %}{% endfor %}
               {% else %}Base{% endif %}
+            {% elif tile.id in cumulative %}
+              {% for mat, amt in cumulative[tile.id].items() %}{{ mat }} {{ amt }}g{% if not loop.last %}<br>{% endif %}{% endfor %}
             {% else %}{{ tile.additions or '—' }}{% endif %}
           </td>
           <td>{{ tile.cone or '—' }}</td>
@@ -245,13 +247,17 @@
       {% else %}
       <div class="tile-additions">Base</div>
       {% endif %}
+      {% if tile.id in cumulative %}
+      <div style="font-size:10px; color:var(--text-muted); margin-top:6px; line-height:1.6; border-top:1px solid var(--border); padding-top:6px;">
+        {% for mat, total in cumulative[tile.id].items() %}<div>{{ mat }}: {{ total }}g</div>{% endfor %}
+      </div>
+      {% endif %}
+    {% elif tile.id in cumulative %}
+      <div class="tile-additions">
+        {% for mat, amt in cumulative[tile.id].items() %}{{ mat }} {{ amt }}g<br>{% endfor %}
+      </div>
     {% elif tile.additions %}
       <div class="tile-additions">{{ tile.additions }}</div>
-    {% endif %}
-    {% if tile.id in cumulative %}
-    <div style="font-size:10px; color:var(--text-muted); margin-top:6px; line-height:1.6; border-top:1px solid var(--border); padding-top:6px;">
-      {% for mat, total in cumulative[tile.id].items() %}<div>{{ mat }}: {{ total }}g</div>{% endfor %}
-    </div>
     {% endif %}
   </div>
 </div>
