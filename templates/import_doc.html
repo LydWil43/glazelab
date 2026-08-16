@@ -158,16 +158,31 @@
           {% for add in tile.additions_data %}
           {% if add.material_id is none %}
           {% set add_idx = loop.index0 %}
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
-            <span style="font-family:'DM Mono',monospace;font-size:12px;min-width:160px;">{{ add.raw_name }}</span>
-            <select name="mat_{{ block.glaze_number }}_{{ s_idx }}_{{ tile.number }}_{{ add_idx }}"
-                    class="field-input" style="width:240px;padding:4px 8px;font-size:13px;">
-              <option value="">— select resolution —</option>
-              {% for mat in materials_for_select %}
-              <option value="{{ mat.id }}">{{ mat.name }}</option>
-              {% endfor %}
-              <option value="create">+ Create "{{ add.raw_name }}" as new material</option>
-            </select>
+          {% set field_id = 'mat_' ~ block.glaze_number ~ '_' ~ s_idx ~ '_' ~ tile.number ~ '_' ~ add_idx %}
+          <div style="margin-bottom:12px;">
+            <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-mid);margin-bottom:6px;">{{ add.raw_name }}</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                <input type="radio" name="{{ field_id }}_action" value="existing"
+                       onchange="document.getElementById('{{ field_id }}_existing').style.display='flex'; document.getElementById('{{ field_id }}_create').style.display='none'">
+                Map to existing material:
+                <select id="{{ field_id }}_existing" name="{{ field_id }}_existing"
+                        class="field-input" style="display:none;width:220px;padding:4px 8px;font-size:13px;">
+                  <option value="">— select —</option>
+                  {% for mat in materials_for_select %}
+                  <option value="{{ mat.id }}">{{ mat.name }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                <input type="radio" name="{{ field_id }}_action" value="create" checked
+                       onchange="document.getElementById('{{ field_id }}_create').style.display='flex'; document.getElementById('{{ field_id }}_existing').style.display='none'">
+                Create new material named:
+                <input type="text" id="{{ field_id }}_create" name="{{ field_id }}_create"
+                       value="{{ add.raw_name }}"
+                       class="field-input" style="display:flex;width:220px;padding:4px 8px;font-size:13px;">
+              </label>
+            </div>
           </div>
           {% endif %}
           {% endfor %}

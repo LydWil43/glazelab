@@ -998,25 +998,31 @@ def import_doc_apply():
                     resolved_additions = []
                     fully_resolved = True
                     for add_idx, add in enumerate(additions_data):
+                        if add.get('material_id'):
+                            # Already resolved in Phase 1 — no user input needed
+                            resolved_additions.append({'material_id': add['material_id'], 'amount': add['amount']})
+                            continue
+
                         field = f'mat_{glaze_number}_{current_s_idx}_{tile_num}_{add_idx}'
-                        mat_choice = (request.form.get(field) or '').strip()
-                        if mat_choice == 'create':
-                            # Create new Material within this transaction
-                            existing_mat = Material.query.filter_by(name=add['raw_name']).first()
+                        action = (request.form.get(f'{field}_action') or '').strip()
+                        if action == 'existing':
+                            existing_id = (request.form.get(f'{field}_existing') or '').strip()
+                            if existing_id:
+                                resolved_additions.append({'material_id': int(existing_id), 'amount': add['amount']})
+                            else:
+                                fully_resolved = False
+                                break
+                        elif action == 'create':
+                            mat_name = (request.form.get(f'{field}_create') or '').strip() or add['raw_name']
+                            existing_mat = Material.query.filter_by(name=mat_name).first()
                             if existing_mat:
                                 mat_id = existing_mat.id
                             else:
-                                new_mat = Material(name=add['raw_name'])
+                                new_mat = Material(name=mat_name)
                                 db.session.add(new_mat)
                                 db.session.flush()
                                 mat_id = new_mat.id
                             resolved_additions.append({'material_id': mat_id, 'amount': add['amount']})
-                        elif mat_choice:
-                            # Existing material selected
-                            resolved_additions.append({'material_id': int(mat_choice), 'amount': add['amount']})
-                        elif add.get('material_id'):
-                            # Already resolved in Phase 1
-                            resolved_additions.append({'material_id': add['material_id'], 'amount': add['amount']})
                         else:
                             fully_resolved = False
                             break
