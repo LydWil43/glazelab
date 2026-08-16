@@ -40,7 +40,7 @@
   <div style="border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:12px;background:var(--surface);">
 
     {# Header row #}
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:{% if block.classification != 'clean' %}12px{% else %}0{% endif %};">
+    <div style="display:flex;align-items:center;gap:10px;">
       <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">#{{ block.glaze_number }}</span>
       <span style="font-size:14px;font-weight:500;">{{ block.incoming_name }}</span>
 
@@ -109,27 +109,29 @@
       </div>
     {% endif %}
 
-    {# Series summary (all classifications) #}
+    {# Series breakdown (all classifications) #}
     {% if block.series %}
-    {% set tile_count = namespace(total=0) %}
-    {% set invalid_count = namespace(total=0) %}
-    {% for s in block.series %}
-      {% if s.valid %}{% set tile_count.total = tile_count.total + s.tiles | length %}
-      {% else %}{% set invalid_count.total = invalid_count.total + 1 %}{% endif %}
-    {% endfor %}
-    <div style="margin-top:12px;font-size:12px;color:var(--text-muted);">
-      {{ block.series | length }} series &middot; {{ tile_count.total }} tiles
-      {% if invalid_count.total > 0 %}
-        &middot; <span style="color:var(--amber);">{{ invalid_count.total }} invalid series will be skipped</span>
-      {% endif %}
-    </div>
-    {% for s in block.series %}
-      {% if not s.valid %}
-      <div style="margin-top:6px;font-size:12px;color:var(--amber);padding-left:4px;">
-        "{{ s.name }}" — {{ s.error }}
+    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
+      {% for s in block.series %}
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:5px;">
+        {% if s.valid %}
+          {% set tile_count = s.tiles | length %}
+          {% set unresolved_count = namespace(total=0) %}
+          {% for tile in s.tiles %}{% set has_unresolved = namespace(v=false) %}{% for add in tile.additions_data %}{% if add.material_id is none %}{% set has_unresolved.v = true %}{% endif %}{% endfor %}{% if has_unresolved.v %}{% set unresolved_count.total = unresolved_count.total + 1 %}{% endif %}{% endfor %}
+          <span style="font-size:13px;">{{ s.name }}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">{{ tile_count }} tile{{ 's' if tile_count != 1 else '' }}</span>
+          {% if s.variable %}<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">{{ s.variable }}</span>{% endif %}
+          {% if s.format_type %}<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">{{ s.format_type }}</span>{% endif %}
+          {% if unresolved_count.total > 0 %}
+            <span style="font-size:11px;color:var(--amber);">{{ unresolved_count.total }} tile{{ 's' if unresolved_count.total != 1 else '' }} need material resolution</span>
+          {% endif %}
+        {% else %}
+          <span style="font-size:13px;color:var(--text-muted);text-decoration:line-through;">{{ s.name }}</span>
+          <span style="font-size:11px;color:var(--amber);">{{ s.error }}</span>
+        {% endif %}
       </div>
-      {% endif %}
-    {% endfor %}
+      {% endfor %}
+    </div>
     {% endif %}
 
     {# Unresolved materials #}
