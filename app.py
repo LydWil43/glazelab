@@ -324,7 +324,12 @@ def test_detail(test_id):
                      .filter(TileAddition.tile_id == tile.id)
                      .order_by(TileAddition.sort_order).all())
         if tile_adds:
-            cumulative[tile.id] = {mat.name: ta.amount for ta, mat in tile_adds}
+            if test.test_type == 'progression_blend':
+                for ta, mat in tile_adds:
+                    running[mat.name] = round(running.get(mat.name, 0) + ta.amount, 4)
+                cumulative[tile.id] = dict(running)
+            else:
+                cumulative[tile.id] = {mat.name: ta.amount for ta, mat in tile_adds}
         elif test.test_type == 'progression_blend':
             items = _parse_addition(tile.additions)
             if items:
@@ -343,6 +348,19 @@ def update_test_status(test_id):
     test.status = request.form.get('status', test.status)
     db.session.commit()
     return redirect(url_for('test_detail', test_id=test_id))
+
+@app.route('/tests/<int:test_id>/edit', methods=['GET', 'POST'])
+def edit_test(test_id):
+    test = GlazeTest.query.get_or_404(test_id)
+    if request.method == 'POST':
+        test.name = request.form.get('name', test.name).strip() or test.name
+        test.test_type = request.form.get('test_type', test.test_type)
+        test.variable = request.form.get('variable', '').strip() or None
+        test.description = request.form.get('description', '').strip() or None
+        test.base_batch_size = float(request.form['base_batch_size']) if request.form.get('base_batch_size') else test.base_batch_size
+        db.session.commit()
+        return redirect(url_for('test_detail', test_id=test_id))
+    return render_template('test_edit.html', test=test)
 
 @app.route('/tests/<int:test_id>/delete', methods=['POST'])
 def delete_test(test_id):
