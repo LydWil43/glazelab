@@ -32,11 +32,14 @@
       <a href="{{ url_for('materials') }}" class="btn btn-ghost">Cancel</a>
       <button type="submit" class="btn btn-primary">{% if material %}Save Changes{% else %}Add Material{% endif %}</button>
       {% if material %}
-      <form method="post" action="{{ url_for('delete_material', material_id=material.id) }}" style="margin-left:auto;" onsubmit="return confirm('Delete {{ material.name }}? This cannot be undone.')">
-        <button type="submit" class="btn btn-danger">Delete Material</button>
-      </form>
+      <button type="button" class="btn btn-danger" style="margin-left:auto;"
+              onclick="document.getElementById('delete-material-form').submit()">Delete Material</button>
       {% endif %}
     </div>
   </form>
+  {% if material %}
+  <form id="delete-material-form" method="post" action="{{ url_for('delete_material', material_id=material.id) }}"
+        onsubmit="return confirm('Delete {{ material.name }}? This cannot be undone.')"></form>
+  {% endif %}
 </div>
 {% endblock %}
