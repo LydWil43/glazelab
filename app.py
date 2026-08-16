@@ -775,17 +775,15 @@ def _parse_import_block(root):
             except (TypeError, ValueError):
                 continue
             additions_data = []
-            additions_td = tile_el.find(class_='gl-additions-data')
-            if additions_td:
-                for add_el in additions_td.find_all(class_='gl-addition'):
-                    try:
-                        amount = float(add_el.get('data-amount') or 0)
-                    except ValueError:
-                        amount = 0.0
-                    additions_data.append({
-                        'raw_name': (add_el.get('data-material') or '').strip(),
-                        'amount': amount,
-                    })
+            for add_el in tile_el.find_all(class_='gl-addition'):
+                try:
+                    amount = float(add_el.get('data-amount') or 0)
+                except ValueError:
+                    amount = 0.0
+                additions_data.append({
+                    'raw_name': (add_el.get('data-material') or '').strip(),
+                    'amount': amount,
+                })
             tiles.append({
                 'number': tile_num,
                 'addition': (tile_el.get('data-addition') or '').strip(),
