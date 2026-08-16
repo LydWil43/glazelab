@@ -662,8 +662,19 @@ def glazy_fetch(glazy_id):
     ro_total  = f(umf, 'ROTotal')
     r2o = f"{r2o_total}:{ro_total}" if r2o_total is not None and ro_total is not None else None
 
+    ingredients = [
+        {
+            'material': c.get('material', {}).get('name', ''),
+            'amount': round(float(c.get('percentageAmount', 0)), 2),
+            'is_additive': c.get('isAdditional', False),
+        }
+        for c in recipe.get('materialComponents', [])
+        if c.get('material', {}).get('name')
+    ]
+
     return jsonify({
         'name':           recipe.get('name'),
+        'ingredients':    ingredients,
         'umf_na2o':       f(umf, 'Na2O'),
         'umf_k2o':        f(umf, 'K2O'),
         'umf_cao':        f(umf, 'CaO'),

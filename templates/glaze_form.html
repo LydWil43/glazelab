@@ -189,8 +189,30 @@ async function fetchFromGlazy() {
         if (el) { el.value = data[key]; filled++; }
       }
     }
+
+    if (data.ingredients && data.ingredients.length > 0) {
+      const list = document.getElementById('ingredients-list');
+      list.innerHTML = '';
+      ingCount = 0;
+      for (const ing of data.ingredients) {
+        const row = document.createElement('div');
+        row.className = 'ingredient-row';
+        row.innerHTML = `
+          <input type="text" name="material[]" value="${ing.material}" placeholder="Material name" class="ing-material">
+          <input type="number" name="amount[]" value="${ing.amount}" placeholder="Amount" step="any" class="ing-amount">
+          <label class="ing-additive-label">
+            <input type="checkbox" name="is_additive[]" value="${ingCount}" ${ing.is_additive ? 'checked' : ''}> Additive
+          </label>
+          <button type="button" class="btn-remove-ing" onclick="removeIngredient(this)">×</button>
+        `;
+        list.appendChild(row);
+        ingCount++;
+      }
+      filled++;
+    }
+
     status.style.color = filled > 0 ? 'var(--color-success, #27ae60)' : 'inherit';
-    status.textContent = filled > 0 ? `Filled ${filled} UMF fields from Glazy.` : 'Connected but no UMF data found for this ID.';
+    status.textContent = filled > 0 ? `Filled recipe and UMF fields from Glazy.` : 'Connected but no data found for this ID.';
   } catch (e) {
     status.style.color = 'var(--color-error, #c0392b)';
     status.textContent = 'Network error. Try again.';
