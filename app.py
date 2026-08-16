@@ -456,6 +456,14 @@ def edit_material(material_id):
         return redirect(url_for('materials'))
     return render_template('material_form.html', material=material)
 
+@app.route('/materials/<int:material_id>/delete', methods=['POST'])
+def delete_material(material_id):
+    material = Material.query.get_or_404(material_id)
+    db.session.delete(material)
+    db.session.commit()
+    flash('Material deleted.', 'success')
+    return redirect(url_for('materials'))
+
 @app.route('/tests/print')
 def print_tests():
     tag_filter = request.args.get('tag', '')
