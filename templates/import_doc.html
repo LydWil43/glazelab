@@ -119,12 +119,22 @@
           {% set unresolved_count = namespace(total=0) %}
           {% for tile in s.tiles %}{% set has_unresolved = namespace(v=false) %}{% for add in tile.additions_data %}{% if add.material_id is none %}{% set has_unresolved.v = true %}{% endif %}{% endfor %}{% if has_unresolved.v %}{% set unresolved_count.total = unresolved_count.total + 1 %}{% endif %}{% endfor %}
           <span style="font-size:13px;">{{ s.name }}</span>
-          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">{{ tile_count }} tile{{ 's' if tile_count != 1 else '' }}</span>
           {% if s.variable %}<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">{{ s.variable }}</span>{% endif %}
           {% if s.format_type %}<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">{{ s.format_type }}</span>{% endif %}
           {% if unresolved_count.total > 0 %}
             <span style="font-size:11px;color:var(--amber);">{{ unresolved_count.total }} tile{{ 's' if unresolved_count.total != 1 else '' }} need material resolution</span>
           {% endif %}
+          <div style="margin-top:6px;width:100%;">
+            {% for tile in s.tiles %}
+            <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;padding:2px 0;">
+              <span style="font-family:'DM Mono',monospace;color:var(--text-muted);min-width:28px;">{{ tile.number }}</span>
+              <span style="color:var(--text-mid);">{{ tile.addition if tile.addition else '—' }}</span>
+              {% for add in tile.additions_data %}
+              <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">{{ add.raw_name }} {{ "%.2f"|format(add.amount) }}g</span>
+              {% endfor %}
+            </div>
+            {% endfor %}
+          </div>
         {% else %}
           <span style="font-size:13px;color:var(--text-muted);text-decoration:line-through;">{{ s.name }}</span>
           <span style="font-size:11px;color:var(--amber);">{{ s.error }}</span>
