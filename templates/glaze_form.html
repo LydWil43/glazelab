@@ -116,7 +116,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>Expansion</label>
-          <input type="number" name="umf_expansion" value="{{ glaze.umf_expansion if glaze else '' }}" step="0.1" placeholder="e.g. 6.1">
+          <input type="number" name="umf_expansion" value="{{ glaze.umf_expansion if glaze else '' }}" step="any" placeholder="e.g. 6.1">
         </div>
         <div class="form-group">
           <label>R₂O:RO</label>
@@ -124,17 +124,17 @@
         </div>
         <div class="form-group">
           <label>SiO₂:Al₂O₃</label>
-          <input type="number" name="umf_sio2_al2o3" value="{{ glaze.umf_sio2_al2o3 if glaze else '' }}" step="0.01" placeholder="e.g. 6.14">
+          <input type="number" name="umf_sio2_al2o3" value="{{ glaze.umf_sio2_al2o3 if glaze else '' }}" step="any" placeholder="e.g. 6.14">
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Na₂O</label><input type="number" name="umf_na2o" value="{{ glaze.umf_na2o if glaze else '' }}" step="0.01"></div>
-        <div class="form-group"><label>K₂O</label><input type="number" name="umf_k2o" value="{{ glaze.umf_k2o if glaze else '' }}" step="0.01"></div>
-        <div class="form-group"><label>CaO</label><input type="number" name="umf_cao" value="{{ glaze.umf_cao if glaze else '' }}" step="0.01"></div>
-        <div class="form-group"><label>MgO</label><input type="number" name="umf_mgo" value="{{ glaze.umf_mgo if glaze else '' }}" step="0.01"></div>
-        <div class="form-group"><label>Al₂O₃</label><input type="number" name="umf_al2o3" value="{{ glaze.umf_al2o3 if glaze else '' }}" step="0.01"></div>
-        <div class="form-group"><label>SiO₂</label><input type="number" name="umf_sio2" value="{{ glaze.umf_sio2 if glaze else '' }}" step="0.01"></div>
-        <div class="form-group"><label>B₂O₃</label><input type="number" name="umf_b2o3" value="{{ glaze.umf_b2o3 if glaze else '' }}" step="0.01"></div>
+        <div class="form-group"><label>Na₂O</label><input type="number" name="umf_na2o" value="{{ glaze.umf_na2o if glaze else '' }}" step="any"></div>
+        <div class="form-group"><label>K₂O</label><input type="number" name="umf_k2o" value="{{ glaze.umf_k2o if glaze else '' }}" step="any"></div>
+        <div class="form-group"><label>CaO</label><input type="number" name="umf_cao" value="{{ glaze.umf_cao if glaze else '' }}" step="any"></div>
+        <div class="form-group"><label>MgO</label><input type="number" name="umf_mgo" value="{{ glaze.umf_mgo if glaze else '' }}" step="any"></div>
+        <div class="form-group"><label>Al₂O₃</label><input type="number" name="umf_al2o3" value="{{ glaze.umf_al2o3 if glaze else '' }}" step="any"></div>
+        <div class="form-group"><label>SiO₂</label><input type="number" name="umf_sio2" value="{{ glaze.umf_sio2 if glaze else '' }}" step="any"></div>
+        <div class="form-group"><label>B₂O₃</label><input type="number" name="umf_b2o3" value="{{ glaze.umf_b2o3 if glaze else '' }}" step="any"></div>
       </div>
     </div>
 
