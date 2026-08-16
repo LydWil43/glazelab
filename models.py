@@ -120,6 +120,8 @@ class GlazeTest(db.Model):
     glaze_id = db.Column(db.Integer, db.ForeignKey('glazes.id'), nullable=False)
     fire_id = db.Column(db.Integer, db.ForeignKey('fires.id'), nullable=True)
     name = db.Column(db.String(200), nullable=False)
+    variable = db.Column(db.String(200))
+    format_type = db.Column(db.String(50))  # Progression Blend, Line Blend, Discrete Batch, Layering Test
     description = db.Column(db.Text)
     test_type = db.Column(db.String(50))  # wet_progression, discrete_batch
     base_batch_size = db.Column(db.Float)

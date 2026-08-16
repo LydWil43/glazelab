@@ -3,49 +3,13 @@
 {% block topbar_title %}Import Doc{% endblock %}
 
 {% block content %}
-{% if result %}
-<div class="form-panel" style="max-width:600px;">
-  <div style="margin-bottom:20px;">
-    <div style="font-family:'Libre Baskerville',serif;font-size:17px;margin-bottom:4px;">Import complete</div>
-    <div style="font-size:13px;color:var(--text-muted);">Doc saved and tests created.</div>
-  </div>
 
-  <div class="data-table-wrap" style="margin-bottom:20px;">
-    <table class="data-table">
-      <thead><tr><th>Series</th><th>Tiles</th><th></th></tr></thead>
-      <tbody>
-      {% for t in result.tests %}
-        <tr>
-          <td>{{ t.name }}</td>
-          <td>{{ t.tiles }}</td>
-          <td><a href="{{ url_for('test_detail', test_id=t.test_id) }}" class="btn btn-ghost" style="padding:4px 10px;font-size:12px;">View</a></td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  {% if result.glaze %}
-  <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">
-    Linked to glaze #{{ result.glaze.studio_number }} — {{ result.glaze.name }}
-  </div>
-  {% else %}
-  <div style="font-size:12px;color:var(--amber);margin-bottom:16px;">
-    No matching glaze found — tests created without a glaze link.
-  </div>
-  {% endif %}
-
-  <div style="display:flex;gap:10px;">
-    <a href="{{ url_for('doc_detail', doc_id=result.doc.id) }}" class="btn btn-primary">View Doc</a>
-    <a href="{{ url_for('import_doc') }}" class="btn btn-ghost">Import Another</a>
-  </div>
-</div>
-
-{% else %}
+{# ── UPLOAD FORM ───────────────────────────────────────────────────────────── #}
+{% if state == 'upload' %}
 <div class="form-panel" style="max-width:500px;">
   <div style="font-family:'Libre Baskerville',serif;font-size:17px;margin-bottom:6px;">Import a Color Test Doc</div>
   <div style="font-size:13px;color:var(--text-muted);margin-bottom:24px;">
-    Upload an HTML file generated with the GlazeLab schema. It will be saved to Docs and the test series will be created automatically.
+    Upload an HTML file generated with the GlazeLab schema. Each glaze block will be previewed before anything is written.
   </div>
   <form method="post" enctype="multipart/form-data">
     <div class="field-group">
@@ -53,9 +17,194 @@
       <input type="file" name="file" accept=".html,.htm" class="field-input" required>
     </div>
     <div class="form-actions">
-      <button class="btn btn-primary" type="submit">Import</button>
+      <button class="btn btn-primary" type="submit">Preview Import</button>
     </div>
   </form>
 </div>
+
+{# ── PREVIEW / CONFIRM ─────────────────────────────────────────────────────── #}
+{% elif state == 'preview' %}
+<form method="post" action="{{ url_for('import_doc_apply') }}">
+  <input type="hidden" name="preview_data" value="{{ preview_json | e }}">
+  <input type="hidden" name="doc_id" value="{{ doc.id }}">
+
+  <div style="margin-bottom:20px;">
+    <div style="font-family:'Libre Baskerville',serif;font-size:17px;margin-bottom:4px;">Review Import</div>
+    <div style="font-size:13px;color:var(--text-muted);">
+      {{ blocks | length }} glaze block{{ 's' if blocks | length != 1 else '' }} found in <strong>{{ doc.title }}</strong>.
+      Review below, then click Apply.
+    </div>
+  </div>
+
+  {% for block in blocks %}
+  <div style="border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:12px;background:var(--surface);">
+
+    {# Header row #}
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:{% if block.classification != 'clean' %}12px{% else %}0{% endif %};">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">#{{ block.glaze_number }}</span>
+      <span style="font-size:14px;font-weight:500;">{{ block.incoming_name }}</span>
+
+      {% if block.classification == 'new' %}
+        <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;background:var(--clay-pale);color:var(--clay);padding:2px 8px;border-radius:4px;">New Glaze</span>
+      {% elif block.classification == 'clean' %}
+        <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;background:var(--moss-pale);color:var(--moss);padding:2px 8px;border-radius:4px;">Clean Match</span>
+      {% elif block.classification == 'name_mismatch' %}
+        <span style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;background:var(--amber-pale);color:var(--amber);padding:2px 8px;border-radius:4px;">Name Mismatch</span>
+      {% endif %}
+    </div>
+
+    {# New glaze: show incoming details #}
+    {% if block.classification == 'new' %}
+      <div style="display:flex;gap:24px;font-size:12px;color:var(--text-muted);margin-bottom:{% if block.recipe %}10px{% else %}0{% endif %};">
+        {% if block.cone %}<span>Cone {{ block.cone }}</span>{% endif %}
+        {% if block.atmosphere %}<span>{{ block.atmosphere }}</span>{% endif %}
+        {% if block.category %}<span>{{ block.category }}</span>{% endif %}
+      </div>
+      {% if block.recipe %}
+      <div style="margin-top:8px;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Recipe</div>
+        <table style="font-size:12px;border-collapse:collapse;width:auto;">
+          {% for mat in block.recipe %}
+          <tr>
+            <td style="padding:2px 16px 2px 0;color:var(--text-mid);">{{ mat.material }}</td>
+            <td style="padding:2px 0;font-family:'DM Mono',monospace;color:var(--text-muted);">{{ "%.2f"|format(mat.amount) }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% endif %}
+      {% if not block.recipe %}
+      <div style="font-size:12px;color:var(--amber);margin-top:4px;">No recipe included — glaze will be created without ingredients.</div>
+      {% endif %}
+    {% endif %}
+
+    {# Name mismatch: show conflict + controls #}
+    {% if block.classification == 'name_mismatch' %}
+      <div style="display:flex;gap:16px;font-size:12px;margin-bottom:12px;">
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px;">Stored name</div>
+          <div style="color:var(--text-mid);">{{ block.current_name }}</div>
+        </div>
+        <div style="color:var(--border-strong);font-size:16px;align-self:flex-end;margin-bottom:2px;">→</div>
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:3px;">Incoming name</div>
+          <div>{{ block.incoming_name }}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="radio" name="choice_{{ block.glaze_number }}" value="apply" checked
+                 onchange="document.getElementById('name_field_{{ block.glaze_number }}').style.display='flex'">
+          Overwrite name to:
+        </label>
+        <div id="name_field_{{ block.glaze_number }}" style="display:flex;align-items:center;gap:8px;">
+          <input type="text" name="name_{{ block.glaze_number }}" value="{{ block.incoming_name }}"
+                 class="field-input" style="width:240px;padding:4px 8px;font-size:13px;">
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--text-muted);">
+          <input type="radio" name="choice_{{ block.glaze_number }}" value="skip"
+                 onchange="document.getElementById('name_field_{{ block.glaze_number }}').style.display='none'">
+          Skip this glaze
+        </label>
+      </div>
+    {% endif %}
+
+    {# Series summary (all classifications) #}
+    {% if block.series %}
+    {% set tile_count = namespace(total=0) %}
+    {% set invalid_count = namespace(total=0) %}
+    {% for s in block.series %}
+      {% if s.valid %}{% set tile_count.total = tile_count.total + s.tiles | length %}
+      {% else %}{% set invalid_count.total = invalid_count.total + 1 %}{% endif %}
+    {% endfor %}
+    <div style="margin-top:12px;font-size:12px;color:var(--text-muted);">
+      {{ block.series | length }} series &middot; {{ tile_count.total }} tiles
+      {% if invalid_count.total > 0 %}
+        &middot; <span style="color:var(--amber);">{{ invalid_count.total }} invalid series will be skipped</span>
+      {% endif %}
+    </div>
+    {% for s in block.series %}
+      {% if not s.valid %}
+      <div style="margin-top:6px;font-size:12px;color:var(--amber);padding-left:4px;">
+        "{{ s.name }}" — {{ s.error }}
+      </div>
+      {% endif %}
+    {% endfor %}
+    {% endif %}
+
+  </div>
+  {% endfor %}
+
+  <div style="margin-top:20px;display:flex;gap:10px;align-items:center;">
+    <button class="btn btn-primary" type="submit">Apply</button>
+    <a href="{{ url_for('import_doc') }}" class="btn btn-ghost">Cancel</a>
+    <span style="font-size:12px;color:var(--text-muted);margin-left:4px;">
+      Clean matches and new glazes apply automatically. Name mismatches need a decision above.
+    </span>
+  </div>
+</form>
+
+{# ── RESULT ────────────────────────────────────────────────────────────────── #}
+{% elif state == 'result' %}
+<div class="form-panel" style="max-width:640px;">
+  <div style="margin-bottom:20px;">
+    <div style="font-family:'Libre Baskerville',serif;font-size:17px;margin-bottom:4px;">Import complete</div>
+    {% if doc %}
+    <div style="font-size:13px;color:var(--text-muted);">{{ doc.title }}</div>
+    {% endif %}
+  </div>
+
+  <div class="data-table-wrap" style="margin-bottom:20px;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Glaze</th>
+          <th>Status</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in results %}
+        <tr>
+          <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);">{{ r.glaze_number }}</td>
+          <td>{{ r.name }}</td>
+          <td>
+            {% if r.status == 'imported' %}
+              <span style="color:var(--moss);">Imported</span>
+            {% elif r.status == 'skipped' %}
+              <span style="color:var(--text-muted);">Skipped</span>
+            {% elif r.status == 'error' %}
+              <span style="color:var(--red);">Error</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12px;color:var(--text-muted);">
+            {% if r.status == 'imported' %}
+              {{ r.glaze_action }}
+              &middot; {{ r.tests_created }} series
+              &middot; {{ r.tiles_created }} tiles
+              {% if r.skipped_series %}
+                {% for ss in r.skipped_series %}
+                  <div style="color:var(--amber);">skipped "{{ ss.name }}" — {{ ss.error }}</div>
+                {% endfor %}
+              {% endif %}
+            {% elif r.status == 'error' %}
+              <span style="color:var(--red);">{{ r.detail }}</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:flex;gap:10px;">
+    {% if doc %}
+    <a href="{{ url_for('doc_detail', doc_id=doc.id) }}" class="btn btn-primary">View Doc</a>
+    {% endif %}
+    <a href="{{ url_for('import_doc') }}" class="btn btn-ghost">Import Another</a>
+  </div>
+</div>
 {% endif %}
+
 {% endblock %}
