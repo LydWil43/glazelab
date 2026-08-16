@@ -136,7 +136,7 @@ def glazes():
                 Glaze.ingredients.any(Ingredient.material.ilike(f'%{search}%'))
             )
         )
-    all_glazes = query.order_by(Glaze.studio_number).all()
+    all_glazes = query.order_by(Glaze.created_at.desc()).all()
     # Collect all unique tags for filter chips
     all_tags = sorted(set(
         t.strip() for g in Glaze.query.all()
