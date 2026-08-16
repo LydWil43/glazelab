@@ -737,15 +737,28 @@ def save_doc_checkboxes(doc_id):
     db.session.commit()
     return jsonify({'ok': True})
 
+@app.route('/docs/<int:doc_id>/notes', methods=['POST'])
+def save_doc_notes(doc_id):
+    doc = Document.query.get_or_404(doc_id)
+    data = request.get_json()
+    notes = _json.loads(doc.obs_notes or '{}')
+    notes[str(data['index'])] = data['value']
+    doc.obs_notes = _json.dumps(notes)
+    db.session.commit()
+    return jsonify({'ok': True})
+
 @app.route('/docs/<int:doc_id>/render')
 def render_doc(doc_id):
     from flask import Response
     doc = Document.query.get_or_404(doc_id)
     states = _json.dumps(_json.loads(doc.checkbox_states or '{}'))
+    notes = _json.dumps(_json.loads(doc.obs_notes or '{}'))
     inject = f"""<script>
 (function(){{
   var DOC_ID = {doc_id};
   var SAVED = {states};
+  var SAVED_NOTES = {notes};
+  var noteTimers = {{}};
   function init() {{
     var boxes = document.querySelectorAll('input[type="checkbox"]');
     boxes.forEach(function(cb, i) {{
@@ -756,6 +769,20 @@ def render_doc(doc_id):
           headers: {{'Content-Type': 'application/json'}},
           body: JSON.stringify({{index: i, checked: cb.checked}})
         }});
+      }});
+    }});
+    var inputs = document.querySelectorAll('.obs-input');
+    inputs.forEach(function(inp, i) {{
+      if (SAVED_NOTES[String(i)]) inp.value = SAVED_NOTES[String(i)];
+      inp.addEventListener('input', function() {{
+        clearTimeout(noteTimers[i]);
+        noteTimers[i] = setTimeout(function() {{
+          fetch('/docs/' + DOC_ID + '/notes', {{
+            method: 'POST',
+            headers: {{'Content-Type': 'application/json'}},
+            body: JSON.stringify({{index: i, value: inp.value}})
+          }});
+        }}, 800);
       }});
     }});
     parent.postMessage({{iframeHeight: document.documentElement.scrollHeight}}, '*');

@@ -187,6 +187,7 @@ class Document(db.Model):
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, default='')
     checkbox_states = db.Column(db.Text, default='{}')  # JSON: {"0": true, "2": true, ...}
+    obs_notes = db.Column(db.Text, default='{}')  # JSON: {"0": "note text", ...}
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
