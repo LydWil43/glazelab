@@ -466,6 +466,7 @@ def edit_material(material_id):
 @app.route('/materials/<int:material_id>/delete', methods=['POST'])
 def delete_material(material_id):
     material = Material.query.get_or_404(material_id)
+    TileAddition.query.filter_by(material_id=material_id).delete()
     db.session.delete(material)
     db.session.commit()
     flash('Material deleted.', 'success')
