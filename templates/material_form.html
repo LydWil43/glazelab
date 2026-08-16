@@ -31,6 +31,11 @@
     <div class="form-actions">
       <a href="{{ url_for('materials') }}" class="btn btn-ghost">Cancel</a>
       <button type="submit" class="btn btn-primary">{% if material %}Save Changes{% else %}Add Material{% endif %}</button>
+      {% if material %}
+      <form method="post" action="{{ url_for('delete_material', material_id=material.id) }}" style="margin-left:auto;" onsubmit="return confirm('Delete {{ material.name }}? This cannot be undone.')">
+        <button type="submit" class="btn btn-danger">Delete Material</button>
+      </form>
+      {% endif %}
     </div>
   </form>
 </div>
