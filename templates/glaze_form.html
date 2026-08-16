@@ -181,7 +181,7 @@ async function fetchFromGlazy() {
     }
 
     const fields = ['umf_na2o','umf_k2o','umf_cao','umf_mgo','umf_al2o3',
-                    'umf_sio2','umf_b2o3','umf_r2o_ro','umf_sio2_al2o3'];
+                    'umf_sio2','umf_b2o3','umf_r2o_ro','umf_sio2_al2o3','umf_expansion'];
     let filled = 0;
     for (const key of fields) {
       if (data[key] !== null && data[key] !== undefined) {

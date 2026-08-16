@@ -643,46 +643,37 @@ def api_glaze(glaze_id):
 def glazy_fetch(glazy_id):
     """Proxy a Glazy recipe and return UMF analysis fields."""
     try:
-        url = f"https://glazy.org/api/recipes/{glazy_id}"
+        url = f"https://api.glazy.org/api/recipes/{glazy_id}"
         req = urllib.request.Request(url, headers={'Accept': 'application/json', 'User-Agent': 'GlazeLab/1.0'})
         with urllib.request.urlopen(req, timeout=8) as resp:
             data = _json.loads(resp.read())
     except Exception as e:
         return jsonify({'error': str(e)}), 502
 
-    # Glazy nests analysis under data.analysis.umf_oxide
     recipe = data.get('data', data)
     analysis = recipe.get('analysis', {})
-    umf = analysis.get('umf_oxide', {})
-    percent = analysis.get('percent_oxide', {})
+    umf = analysis.get('umfAnalysis', {})
 
     def f(d, key):
         v = d.get(key)
         return round(float(v), 4) if v is not None else None
 
-    r2o = None
-    na2o = f(umf, 'Na2O')
-    k2o  = f(umf, 'K2O')
-    if na2o is not None and k2o is not None:
-        total = (na2o or 0) + (k2o or 0)
-        ro = round(1 - total, 4)
-        r2o = f"{round(total, 4)}:{ro}"
-
-    sio2   = f(umf, 'SiO2')
-    al2o3  = f(umf, 'Al2O3')
-    sio2_al2o3 = round(sio2 / al2o3, 4) if sio2 and al2o3 else None
+    r2o_total = f(umf, 'R2OTotal')
+    ro_total  = f(umf, 'ROTotal')
+    r2o = f"{r2o_total}:{ro_total}" if r2o_total is not None and ro_total is not None else None
 
     return jsonify({
         'name':           recipe.get('name'),
-        'umf_na2o':       na2o,
-        'umf_k2o':        k2o,
+        'umf_na2o':       f(umf, 'Na2O'),
+        'umf_k2o':        f(umf, 'K2O'),
         'umf_cao':        f(umf, 'CaO'),
         'umf_mgo':        f(umf, 'MgO'),
-        'umf_al2o3':      al2o3,
-        'umf_sio2':       sio2,
+        'umf_al2o3':      f(umf, 'Al2O3'),
+        'umf_sio2':       f(umf, 'SiO2'),
         'umf_b2o3':       f(umf, 'B2O3'),
         'umf_r2o_ro':     r2o,
-        'umf_sio2_al2o3': sio2_al2o3,
+        'umf_sio2_al2o3': f(umf, 'SiO2Al2O3Ratio'),
+        'umf_expansion':  f(analysis, 'thermalExpansion'),
     })
 
 # ─── DOCUMENTS ────────────────────────────────────────────────────────────────
