@@ -133,6 +133,15 @@ class GlazeTest(db.Model):
     tiles = db.relationship('Tile', backref='test', cascade='all, delete-orphan', order_by='Tile.tile_number')
 
 
+class TileAddition(db.Model):
+    __tablename__ = 'tile_additions'
+    id = db.Column(db.Integer, primary_key=True)
+    tile_id = db.Column(db.Integer, db.ForeignKey('tiles.id'), nullable=False)
+    material_id = db.Column(db.Integer, db.ForeignKey('materials.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    sort_order = db.Column(db.Integer, default=0)
+
+
 class Tile(db.Model):
     __tablename__ = 'tiles'
     id = db.Column(db.Integer, primary_key=True)

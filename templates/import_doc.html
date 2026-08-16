@@ -132,6 +132,38 @@
     {% endfor %}
     {% endif %}
 
+    {# Unresolved materials #}
+    {% for s in block.series %}
+    {% set s_idx = loop.index0 %}
+      {% for tile in s.tiles %}
+        {% set has_unresolved = namespace(value=false) %}
+        {% for add in tile.additions_data %}{% if add.material_id is none %}{% set has_unresolved.value = true %}{% endif %}{% endfor %}
+        {% if has_unresolved.value %}
+        <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+          <div style="font-size:12px;color:var(--amber);margin-bottom:8px;">
+            "{{ s.name }}" — tile {{ tile.number }}: unresolved materials
+          </div>
+          {% for add in tile.additions_data %}
+          {% if add.material_id is none %}
+          {% set add_idx = loop.index0 %}
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
+            <span style="font-family:'DM Mono',monospace;font-size:12px;min-width:160px;">{{ add.raw_name }}</span>
+            <select name="mat_{{ block.glaze_number }}_{{ s_idx }}_{{ tile.number }}_{{ add_idx }}"
+                    class="field-input" style="width:240px;padding:4px 8px;font-size:13px;">
+              <option value="">— select resolution —</option>
+              {% for mat in materials_for_select %}
+              <option value="{{ mat.id }}">{{ mat.name }}</option>
+              {% endfor %}
+              <option value="create">+ Create "{{ add.raw_name }}" as new material</option>
+            </select>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+
   </div>
   {% endfor %}
 

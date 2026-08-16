@@ -9,7 +9,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, f
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 from datetime import datetime
-from models import db, Glaze, Ingredient, Material, GlazeTest, Tile, FiringLog, Fire, Document
+from models import db, Glaze, Ingredient, Material, GlazeTest, Tile, TileAddition, FiringLog, Fire, Document
 
 app = Flask(__name__)
 
@@ -774,9 +774,22 @@ def _parse_import_block(root):
                 tile_num = int(tile_el.get('data-tile'))
             except (TypeError, ValueError):
                 continue
+            additions_data = []
+            additions_td = tile_el.find(class_='gl-additions-data')
+            if additions_td:
+                for add_el in additions_td.find_all(class_='gl-addition'):
+                    try:
+                        amount = float(add_el.get('data-amount') or 0)
+                    except ValueError:
+                        amount = 0.0
+                    additions_data.append({
+                        'raw_name': (add_el.get('data-material') or '').strip(),
+                        'amount': amount,
+                    })
             tiles.append({
                 'number': tile_num,
                 'addition': (tile_el.get('data-addition') or '').strip(),
+                'additions_data': additions_data,
             })
 
         format_type = (series_el.get('data-format-type') or '').strip()
@@ -843,6 +856,10 @@ def import_doc():
         db.session.add(doc)
     db.session.commit()
 
+    # Build a material lookup cache (name → id) for resolution
+    all_materials = Material.query.order_by(Material.name).all()
+    material_lookup = {m.name: m.id for m in all_materials}
+
     # Parse and classify each wrapper
     blocks = []
     for root in wrappers:
@@ -861,11 +878,22 @@ def import_doc():
             block['classification'] = 'name_mismatch'
             block['current_name'] = existing_glaze.name
 
+        # Resolve materials in tile additions
+        for s_idx, s in enumerate(block['series']):
+            for tile in s['tiles']:
+                for add in tile['additions_data']:
+                    mat_id = material_lookup.get(add['raw_name'])
+                    add['material_id'] = mat_id  # None if unresolved
+                tile['resolved'] = all(
+                    a['material_id'] is not None for a in tile['additions_data']
+                )
+
         blocks.append(block)
 
+    materials_for_select = [{'id': m.id, 'name': m.name} for m in all_materials]
     return render_template('import_doc.html', state='preview',
                            blocks=blocks, preview_json=json.dumps(blocks),
-                           doc=doc)
+                           doc=doc, materials_for_select=materials_for_select)
 
 
 @app.route('/import-doc/apply', methods=['POST'])
@@ -950,15 +978,70 @@ def import_doc_apply():
                     db.session.flush()
                     tests_created += 1
 
+                for s_idx, s_check in enumerate(block['series']):
+                    if s_check['name'] == s['name']:
+                        current_s_idx = s_idx
+                        break
+
+                skipped_tiles = []
                 for tile_data in s['tiles']:
-                    db.session.add(Tile(
+                    tile_num = tile_data['number']
+                    additions_data = tile_data.get('additions_data', [])
+
+                    # Resolve each addition from form choices
+                    resolved_additions = []
+                    fully_resolved = True
+                    for add_idx, add in enumerate(additions_data):
+                        field = f'mat_{glaze_number}_{current_s_idx}_{tile_num}_{add_idx}'
+                        choice = (request.form.get(field) or '').strip()
+                        if choice == 'create':
+                            # Create new Material within this transaction
+                            existing_mat = Material.query.filter_by(name=add['raw_name']).first()
+                            if existing_mat:
+                                mat_id = existing_mat.id
+                            else:
+                                new_mat = Material(name=add['raw_name'])
+                                db.session.add(new_mat)
+                                db.session.flush()
+                                mat_id = new_mat.id
+                            resolved_additions.append({'material_id': mat_id, 'amount': add['amount']})
+                        elif choice:
+                            # Existing material selected
+                            resolved_additions.append({'material_id': int(choice), 'amount': add['amount']})
+                        elif add.get('material_id'):
+                            # Already resolved in Phase 1
+                            resolved_additions.append({'material_id': add['material_id'], 'amount': add['amount']})
+                        else:
+                            fully_resolved = False
+                            break
+
+                    if not fully_resolved:
+                        skipped_tiles.append(tile_num)
+                        continue
+
+                    tile = Tile(
                         test_id=test.id,
-                        tile_number=tile_data['number'],
+                        tile_number=tile_num,
                         additions=tile_data['addition'] or None,
                         cone=block['cone'],
                         atmosphere=block['atmosphere'],
-                    ))
+                    )
+                    db.session.add(tile)
+                    db.session.flush()
+                    for add_idx, add in enumerate(resolved_additions):
+                        db.session.add(TileAddition(
+                            tile_id=tile.id,
+                            material_id=add['material_id'],
+                            amount=add['amount'],
+                            sort_order=add_idx,
+                        ))
                     tiles_created += 1
+
+                if skipped_tiles:
+                    skipped_series.append({
+                        'name': s['name'],
+                        'error': f'tiles {skipped_tiles} skipped — unresolved materials',
+                    })
 
             db.session.commit()
             results.append({
