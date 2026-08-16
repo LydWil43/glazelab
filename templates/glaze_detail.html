@@ -7,6 +7,10 @@
 {% endblock %}
 
 {% block content %}
+<div class="mobile-actions">
+  <a href="{{ url_for('edit_glaze', glaze_id=glaze.id) }}" class="btn btn-ghost">Edit</a>
+  <a href="{{ url_for('new_test', glaze_id=glaze.id) }}" class="btn btn-ghost">+ Test</a>
+</div>
 <div class="detail-panel">
   <div class="detail-header">
     <div>
