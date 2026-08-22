@@ -34,13 +34,17 @@ class Glaze(db.Model):
     umf_zro2 = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    cover_tile_id = db.Column(db.Integer, db.ForeignKey('tiles.id'), nullable=True)
 
     ingredients = db.relationship('Ingredient', backref='glaze', cascade='all, delete-orphan', order_by='Ingredient.sort_order')
     tests = db.relationship('GlazeTest', backref='glaze', cascade='all, delete-orphan')
+    cover_tile = db.relationship('Tile', foreign_keys=[cover_tile_id])
 
     @property
     def cover_photo(self):
-        """Return the most recent tile photo across all tests for this glaze."""
+        """Return the designated cover tile photo, or fall back to the most recent."""
+        if self.cover_tile_id and self.cover_tile and self.cover_tile.photo_path:
+            return self.cover_tile.photo_path
         best_tile = None
         for test in self.tests:
             for tile in test.tiles:

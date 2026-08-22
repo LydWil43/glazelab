@@ -234,8 +234,16 @@
     <div class="tile-num">Tile<span>{{ tile.tile_number }}</span></div>
     <div class="tile-status">{{ tile.atmosphere or 'Fired' }}</div>
   </div>
-  <div class="tile-photo">
+  <div class="tile-photo" style="position:relative;">
     <img src="{{ tile.photo_path if tile.photo_path.startswith('http') else url_for('static', filename=tile.photo_path) }}" alt="Tile {{ tile.tile_number }}">
+    <form method="POST" action="{{ url_for('set_cover_tile', tile_id=tile.id) }}" onclick="event.stopPropagation()" style="position:absolute; bottom:6px; right:6px; margin:0;">
+      <button type="submit" title="{{ 'Remove as cover' if test.glaze.cover_tile_id == tile.id else 'Set as glaze cover photo' }}"
+        style="font-family:'DM Mono',monospace; font-size:10px; padding:3px 8px; border-radius:4px; cursor:pointer; border:none;
+               background:{{ 'var(--clay)' if test.glaze.cover_tile_id == tile.id else 'rgba(255,255,255,0.85)' }};
+               color:{{ '#fff' if test.glaze.cover_tile_id == tile.id else 'var(--text-mid)' }};">
+        {{ '★ Cover' if test.glaze.cover_tile_id == tile.id else '☆ Cover' }}
+      </button>
+    </form>
   </div>
   <div class="tile-body">
     {% set items = tile.additions | parse_addition %}

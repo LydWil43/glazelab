@@ -565,6 +565,17 @@ def upload_tile_photo(tile_id):
         db.session.commit()
     return redirect(url_for('test_detail', test_id=tile.test_id))
 
+@app.route('/tiles/<int:tile_id>/set-cover', methods=['POST'])
+def set_cover_tile(tile_id):
+    tile = Tile.query.get_or_404(tile_id)
+    glaze = tile.test.glaze
+    if glaze.cover_tile_id == tile_id:
+        glaze.cover_tile_id = None  # toggle off if already set
+    else:
+        glaze.cover_tile_id = tile_id
+    db.session.commit()
+    return redirect(url_for('test_detail', test_id=tile.test_id))
+
 @app.route('/tests/<int:test_id>/unassign', methods=['POST'])
 def unassign_test(test_id):
     test = GlazeTest.query.get_or_404(test_id)
