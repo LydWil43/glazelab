@@ -147,7 +147,7 @@
               </a>
             {% else %}
               <label class="inline-photo-btn" title="Upload photo">
-                <input type="file" accept="image/*" capture="environment" style="display:none;" onchange="submitTilePhoto(this, {{ tile.id }})">
+                <input type="file" accept="image/*" style="display:none;" onchange="submitTilePhoto(this, {{ tile.id }})">
                 + Photo
               </label>
             {% endif %}
