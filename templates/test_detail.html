@@ -272,9 +272,23 @@
   <img id="photo-lightbox-img" src="" alt="" style="max-width:90vw; max-height:90vh; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.5);">
 </div>
 
+{# ── Crop modal ── #}
+<div id="crop-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:10000; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:10px; padding:20px; max-width:360px; width:92vw;">
+    <div style="font-family:'DM Mono',monospace; font-size:12px; color:var(--text-muted); margin-bottom:12px; text-transform:uppercase; letter-spacing:.06em;">Crop Photo</div>
+    <canvas id="crop-canvas" style="max-width:100%; border-radius:6px;"></canvas>
+    <div style="margin-top:14px; display:flex; gap:10px; justify-content:flex-end;">
+      <button type="button" onclick="cancelCrop()" style="font-family:'DM Mono',monospace; font-size:12px; background:none; border:1px solid var(--border); border-radius:6px; padding:8px 16px; cursor:pointer;">Cancel</button>
+      <button type="button" onclick="confirmCrop()" style="font-family:'DM Mono',monospace; font-size:12px; background:var(--clay); color:#fff; border:none; border-radius:6px; padding:8px 16px; cursor:pointer;">Use This Crop</button>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 <script>
 function openLightbox(url) {
   var lb = document.getElementById('photo-lightbox');
@@ -290,22 +304,72 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeLightbox();
 });
 
+var _cropper = null;
+var _pendingTileId = null;
+
 function submitTilePhoto(input, tileId) {
   if (!input.files || !input.files[0]) return;
-  var form = document.createElement('form');
-  form.method = 'POST';
-  form.action = '/tiles/' + tileId + '/photo';
-  form.enctype = 'multipart/form-data';
-  var fileInput = document.createElement('input');
-  fileInput.type = 'file';
-  fileInput.name = 'photo';
-  // Transfer the selected file via DataTransfer
-  var dt = new DataTransfer();
-  dt.items.add(input.files[0]);
-  fileInput.files = dt.files;
-  form.appendChild(fileInput);
-  document.body.appendChild(form);
-  form.submit();
+  _pendingTileId = tileId;
+  var reader = new FileReader();
+  reader.onload = function(e) { openCropModal(e.target.result); };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function openCropModal(src) {
+  var modal = document.getElementById('crop-modal');
+  var canvas = document.getElementById('crop-canvas');
+  modal.style.display = 'flex';
+  if (_cropper) { _cropper.destroy(); _cropper = null; }
+  var img = new Image();
+  img.onload = function() {
+    var size = Math.min(img.width, img.height, 600);
+    canvas.width = size; canvas.height = size;
+    _cropper = new Cropper(canvas, {
+      viewMode: 1,
+      aspectRatio: 1,
+      autoCropArea: 0.85,
+      background: false,
+      modal: false,
+    });
+    // Cropper needs an <img>, so swap canvas for img temporarily
+    _cropper.destroy();
+    var cropImg = document.createElement('img');
+    cropImg.id = 'crop-img-el';
+    cropImg.src = src;
+    cropImg.style.maxWidth = '100%';
+    canvas.parentNode.replaceChild(cropImg, canvas);
+    _cropper = new Cropper(cropImg, {
+      viewMode: 1,
+      aspectRatio: 1,
+      autoCropArea: 0.85,
+    });
+  };
+  img.src = src;
+}
+
+function cancelCrop() {
+  document.getElementById('crop-modal').style.display = 'none';
+  if (_cropper) { _cropper.destroy(); _cropper = null; }
+  _pendingTileId = null;
+  // restore canvas element
+  var el = document.getElementById('crop-img-el');
+  if (el) {
+    var c = document.createElement('canvas');
+    c.id = 'crop-canvas';
+    c.style.cssText = 'max-width:100%; border-radius:6px;';
+    el.parentNode.replaceChild(c, el);
+  }
+}
+
+function confirmCrop() {
+  if (!_cropper || !_pendingTileId) return;
+  _cropper.getCroppedCanvas({maxWidth: 1200, maxHeight: 1200}).toBlob(function(blob) {
+    var fd = new FormData();
+    fd.append('photo', blob, 'tile.jpg');
+    fetch('/tiles/' + _pendingTileId + '/photo', {method: 'POST', body: fd})
+      .then(function() { window.location.reload(); });
+  }, 'image/jpeg', 0.9);
+  cancelCrop();
 }
 
 function toggleProgression(header) {
